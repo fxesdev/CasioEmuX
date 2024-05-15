@@ -1,7 +1,7 @@
 This is a fork of:
 - [CasioEmuX](https://github.com/Xyzstk/CasioEmuX) by Xyzstk, a fork of
 - [CasioEmuX](https://github.com/qiufuyu123/CasioEmuX) by qiufuyu123, a fork of
-- [CasioEmu](https://github.com/gamingwithevets/CasioEmu) by me, a fork of
+- [CasioEmu](https://github.com/gamingwithevets/CasioEmu) by Steveyboi/gamingwithevets, a fork of
 - [CasioEmu](https://github.com/user202729/CasioEmu) by user202729, a fork of
 - [CasioEmu](https://github.com/LBPHacker/CasioEmu) by LBPHacker.
 
