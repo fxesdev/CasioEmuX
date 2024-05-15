@@ -11,9 +11,10 @@ namespace casioemu
 {
 	class Keyboard : public Peripheral
 	{
-		MMURegion region_ko_mask, region_ko, region_ki, region_input_filter;
+		MMURegion region_ko_mask, region_ko, region_ki, region_input_mode, region_input_filter;
 		uint16_t keyboard_out, keyboard_out_mask;
-		uint8_t keyboard_in, input_filter, keyboard_ghost[8];
+		uint8_t keyboard_in, input_mode, input_filter, keyboard_ghost[8], ki_ghost[8];
+		uint8_t keyboard_in_last, input_filter_last;
 
 		bool real_hardware;
 		MMURegion region_ready_emu, region_ko_emu, region_ki_emu, region_pd_emu;
@@ -22,8 +23,7 @@ namespace casioemu
 		int emu_ki_readcount, emu_ko_readcount;
 
 		uint8_t has_input;
-		size_t XI0INT = 0;
-		bool IntRaised;
+		size_t EXI0INT = 0;
 
 	    SDL_Renderer *renderer;
 

@@ -19,6 +19,7 @@
 #include "../Peripheral/TimerBaseCounter.hpp"
 #include "../Peripheral/RealTimeClock.hpp"
 #include "../Peripheral/WatchdogTimer.hpp"
+#include "../Peripheral/ExternalInterrupts.hpp"
 
 #include "../Gui/ui.hpp"
 
@@ -287,6 +288,7 @@ namespace casioemu
 		peripherals.push_front(new ROMWindow(emulator));
 		peripherals.push_front(new BatteryBackedRAM(emulator));
 		peripherals.push_front(CreateScreen(emulator));
+		peripherals.push_front(new ExternalInterrupts(emulator));
 		peripherals.push_front(new Keyboard(emulator));
 		peripherals.push_front(new StandbyControl(emulator));
 		peripherals.push_front(new Miscellaneous(emulator));

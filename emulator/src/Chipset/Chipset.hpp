@@ -87,6 +87,7 @@ namespace casioemu
 		bool WDT_enabled = false;
 
 		uint8_t data_BLKCON, BLKCON_mask;
+		uint8_t data_EXICON;
 
 		uint8_t data_FCON, data_LTBR, data_HTBR;
 		uint16_t data_LTBADJ;

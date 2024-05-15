@@ -26,10 +26,18 @@ namespace casioemu
 		 */
 		real_hardware = emulator.GetModelInfo("real_hardware");
 
-		IntRaised = false;
 		clock_type = CLOCK_UNDEFINED;
 
 		region_ki.Setup(0xF040, 1, "Keyboard/KI", &keyboard_in, MMURegion::DefaultRead<uint8_t>, MMURegion::IgnoreWrite, emulator);
+
+		region_input_mode.Setup(0xF041, 1, "Keyboard/InputMode", this, [](MMURegion *region, size_t) {
+			Keyboard *keyboard = ((Keyboard *)region->userdata);
+			return (uint8_t)keyboard->input_mode;
+		}, [](MMURegion *region, size_t, uint8_t data) {
+			Keyboard *keyboard = ((Keyboard *)region->userdata);
+			keyboard->input_mode = data;
+			keyboard->RecalculateKI();
+		}, emulator);
 
 		region_input_filter.Setup(0xF042, 1, "Keyboard/InputFilter", &input_filter, MMURegion::DefaultRead<uint8_t>, MMURegion::DefaultWrite<uint8_t>, emulator);
 
@@ -280,9 +288,11 @@ namespace casioemu
 		p0 = false;
 		p1 = false;
 		p146 = false;
+		input_mode = 0;
 		keyboard_out = 0;
 		keyboard_out_mask = 0;
-		IntRaised = false;
+		keyboard_in_last = 0xFF;
+		input_filter_last = 0;
 
 		if (!real_hardware)
 		{
@@ -297,10 +307,30 @@ namespace casioemu
 
 	void Keyboard::Tick()
 	{
-		if (has_input && (!IntRaised)) {
-			emulator.chipset.MaskableInterrupts[XI0INT].TryRaise();
-			IntRaised = true;
+		switch(emulator.chipset.data_EXICON & 0x03) {
+			case 0:
+				input_filter_last &= input_filter;
+				if(keyboard_in_last & input_filter_last & ~(keyboard_in & input_filter_last))
+					emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
+				break;
+			case 1:
+				input_filter_last &= input_filter;
+				if(keyboard_in & input_filter_last & ~(keyboard_in_last & input_filter_last))
+					emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
+				break;
+			case 2:
+				if(input_filter & keyboard_in)
+					emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
+				break;
+			case 3:
+				if(input_filter & ~keyboard_in)
+					emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
+				break;
+			default:
+				break;
 		}
+		input_filter_last = input_filter;
+		keyboard_in_last = keyboard_in;
 	}
 
 	void Keyboard::Frame()
@@ -490,6 +520,7 @@ namespace casioemu
 		struct KOColumn
 		{
 			uint8_t connections;
+			uint8_t KIRows;
 			bool seen;
 		} columns[8];
 
@@ -502,11 +533,13 @@ namespace casioemu
 		{
 			columns[cx].seen = false;
 			columns[cx].connections = 0;
+			columns[cx].KIRows = 0;
 			for (size_t rx = 0; rx != 8; ++rx)
 			{
 				Button &button = buttons[cx * 8 + rx];
 				if (button.type == Button::BT_BUTTON && button.pressed)
 				{
+					columns[cx].KIRows |= 1 << rx;
 					for (size_t ax = 0; ax != 8; ++ax)
 					{
 						Button &sibling = buttons[ax * 8 + rx];
@@ -515,6 +548,10 @@ namespace casioemu
 					}
 				}
 			}
+		}
+
+		for (size_t gx = 0; gx != 8; ++gx) {
+			ki_ghost[gx] = 0;
 		}
 
 		for (size_t cx = 0; cx != 8; ++cx)
@@ -538,6 +575,7 @@ namespace casioemu
 								{
 									new_to_visit |= 1 << sx;
 									ghost_mask |= 1 << sx;
+									columns[cx].KIRows |= columns[sx].KIRows;
 									columns[sx].seen = true;
 								}
 							}
@@ -546,9 +584,12 @@ namespace casioemu
 					to_visit = new_to_visit;
 				}
 
-				for (size_t gx = 0; gx != 8; ++gx)
+				for (size_t gx = 0; gx != 8; ++gx) {
 					if (ghost_mask & (1 << gx))
 						keyboard_ghost[gx] = ghost_mask;
+					if (columns[cx].KIRows & (1 << gx))
+						ki_ghost[gx] = columns[cx].KIRows;
+				}
 			}
 		}
 
@@ -558,14 +599,23 @@ namespace casioemu
 	void Keyboard::RecalculateKI()
 	{
 		uint8_t keyboard_out_ghosted = 0;
+		uint8_t ki_pulled_up = 0;
 		for (size_t ix = 0; ix != 7; ++ix)
 			if (keyboard_out & ~keyboard_out_mask & (1 << ix))
 				keyboard_out_ghosted |= keyboard_ghost[ix];
 
-		keyboard_in = 0xFF;
+		keyboard_in = ~input_mode;
 		for (auto &button : buttons)
 			if (button.type == Button::BT_BUTTON && button.pressed && button.ko_bit & keyboard_out_ghosted)
 				keyboard_in &= ~button.ki_bit;
+
+		for (size_t ix = 0; ix != 8; ++ix)
+			if (keyboard_in & (1 << ix))
+				ki_pulled_up |= ki_ghost[ix];
+
+		for(auto &button : buttons)
+			if (button.type == Button::BT_BUTTON && button.pressed && button.ki_bit & input_mode & ki_pulled_up)
+				keyboard_in |= button.ki_bit;
 
 		if (keyboard_out & ~keyboard_out_mask & (1 << 7) && p0)
 			keyboard_in &= 0x7F;
@@ -590,7 +640,6 @@ namespace casioemu
 		if (had_effect)
 		{
 			require_frame = true;
-			IntRaised = false;
 			if (real_hardware)
 				RecalculateGhost();
 			else

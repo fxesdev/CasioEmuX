@@ -128,7 +128,9 @@ namespace casioemu
 		reg8_t reg_dsr;
 
 		uint8_t impl_last_dsr;
-		
+
+		uint8_t dsr_mask;
+
 		bool real_hardware;
 
 		void SetMemoryModel(MemoryModel memory_model);
