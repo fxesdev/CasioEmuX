@@ -5,7 +5,7 @@ This is a fork of:
 - [CasioEmu](https://github.com/user202729/CasioEmu) by user202729, a fork of
 - [CasioEmu](https://github.com/LBPHacker/CasioEmu) by LBPHacker.
 
-Note that ROMs are **not** included (for copyright reasons), you have to obtain one from somewhere else or dump it from a real calculator or emulator. (note that models labeled with `_emu` are for ROMs dumped from official emulators)=
+Note that ROMs are **not** included (for copyright reasons), you have to obtain one from somewhere else or dump it from a real calculator or emulator. (note that models labeled with `_emu` are for ROMs dumped from official emulators)
 
 Build instructions are in the README inside the `emulator` directory.
 
