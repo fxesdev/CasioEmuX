@@ -118,32 +118,31 @@ unbreak_at      Delete breakpoint.
                 If input not specified, delete breakpoint at current address.
                 Have no effect if there is no breakpoint at specified position.
 cont()          Continue program execution.
-inject          Inject 100 bytes to the input field.
+inject          Inject 100 bytes to the input field. (ES/ES PLUS only)
+an_mode(num, input_area_address)
+				Inject an `an` mode equation into the specified input area address. ClassWiz only.
 
-Keyboard:KeyIn	Auto input keys by sequence from a binary file.The time each key
-ject(filename,	is pressed at for and the delay between two presses could be
-ptime,dtime)	specified in milliseconds.
-
-Keyboard:Press	Press a certain key specified by keycode.
-Key(keycode)
-
-Keyboard:Relea	Release all pressed keys.
-seAll()
-
-Keyboard:Start	Start to track the key inputs.Keycodes will be saved as binary in
-KeyLog(filenam	the specified file.
-e)
-
-Keyboard:StopK	Stop and save the key log.
-eyLog()
+Keyboard:KeyInject(filename,ptime,dtime)	
+                Auto input keys by sequence from a binary file.The time each key
+                is pressed at for and the delay between two presses could be
+                specified in milliseconds.
+Keyboard:PressKey(keycode)
+                Press a certain key specified by keycode.
+Keyboard:ReleaseAll()
+                Release all pressed keys.
+Keyboard:StartKeyLog(filename)
+                Start to track the key inputs.Keycodes will be saved as binary in
+                the specified file.
+Keyboard:StopKeyLog()
+                Stop and save the key log.
 
 pst()           Print 48 bytes of the stack before and after SP.
 
 emu:set_paused  Set emulator state.
 emu:tick()      Execute one command.
 emu:shutdown()  Shutdown the emulator.
-emu:SetClockSp	Set emulator clock speed to certain times the original.
-eed(speed)
+emu:SetClockSpeed(speed)
+                Set emulator clock speed to certain times the original.
 
 cpu.xxx         Get register value.
 cpu.bt          Current stack trace.
@@ -153,6 +152,8 @@ code            Access code. (By words, only use even address,
 data            Access data. (By bytes)
 data:watch      Set write watchpoint.
 data:rwatch     Set read watchpoint.
+data:addr_region
+                Print the name of the region the address is mapped to (if it is mapped to a region)
 
 power.bt        Battery voltage.
 power.sp        Solar panel voltage.
@@ -193,14 +194,14 @@ ppc()           Print current PC address.
 calll           Call log. (addr, before, after)
 nrop            Next "ROP instruction".
 
-keyinj(file,pti	Short for Keyboard:KeyInject(filename,ptime,dtime).
-me,dtime)
+keyinj(file,ptime,dtime)
+                Short for Keyboard:KeyInject(filename,ptime,dtime).
 press(keycode)	Short for Keyboard:PressKey(keycode).
 relkey()        Short for Keyboard:ReleaseAll().
 keylog(file)	Short for Keyboard:StartKeyLog(filename).
 stoplog()       Short for Keyboard:StopKeyLog().
 
-overclock	Set emulator clock speed to certain times the original.
+overclock	    Set emulator clock speed to certain times the original.
 ]])
 end
 
@@ -746,4 +747,28 @@ function trs()
 	rmposttick(trace_posttick)
 	trace_handle:close()
 	trace_handle = nil
+end
+
+function an_mode(num, input)
+    if type(num) ~= 'number' or type(input) ~= 'number' then print('Usage: an_mode(num, input_area_address)') return end
+    if num > 198 or num < 1 then print('Invalid an mode') return end
+
+    if num > 100 then
+        for i = 0, 99, 1
+        do
+            data[input+i] = 0x31
+        end
+        data[input+100] = 0xa6
+        for i = 101, num-1, 1
+        do
+            data[input+i] = 0x31
+        end
+    else
+        for i = 0, num-1, 1
+        do
+            data[input+i] = 0x31
+        end
+    end
+    data[input+num] = 0xfd
+    data[input+num+1] = 0x20
 end

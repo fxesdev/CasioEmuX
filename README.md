@@ -1,18 +1,13 @@
-NOTE: This is a **modified** version of the Casio emulator developed by [LBPHacker](../../../../LBPHacker) and [user202729](../../../../user202729) which supports ClassWiz II models.
+This is a fork of:
+- [CasioEmuX](https://github.com/Xyzstk/CasioEmuX) by Xyzstk, a fork of
+- [CasioEmuX](https://github.com/qiufuyu123/CasioEmuX) by qiufuyu123, a fork of
+- [CasioEmu](https://github.com/gamingwithevets/CasioEmu) by me, a fork of
+- [CasioEmu](https://github.com/user202729/CasioEmu) by user202729, a fork of
+- [CasioEmu](https://github.com/LBPHacker/CasioEmu) by LBPHacker.
 
-Files are modified so that they can work on windows.
+Note that ROMs are **not** included (for copyright reasons), you have to obtain one from somewhere else or dump it from a real calculator or emulator. (note that models labeled with `_emu` are for ROMs dumped from official emulators)=
 
-This repository will get updated with new models in the `models` folder. Note that ROMs are **not** included (for copyright reasons), you have to obtain one from somewhere else or dump it from a real calculator or emulator. (note that models labeled with `_emu` are for ROMs dumped from official emulators)
-
-
-# CasioEmuX
-
-An emulator and disassembler for the CASIO calculator series using the nX-U8/100 core.  
-With debuggers.
-
-The model.lua configured for ClassWiz II models is included in models/fx991cw_emu.
-
-To build it, install tdm-gcc and run build.bat
+Build instructions are in the README inside the `emulator` directory.
 
 ## Command-line arguments
 
@@ -58,6 +53,7 @@ Those Lua functions and variables can be used at the Lua prompt of the emulator.
 data is written to. If `fn` is `nil`, clear the watchpoint.
 * `data:rwatch(offset, fn)`: Set watchpoint at address `offset` - `fn` is called whenever
 data is read from as data. If `fn` is `nil`, clear the watchpoint.
+* `data:addr_region(addr)`: Show what region a data memory address is mapped to.
 
 Some additional functions are available in `lua-common.lua` file.
 To use those, it's necessary to pass the flag `script=emulator/lua-common.lua`.

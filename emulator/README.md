@@ -1,7 +1,6 @@
-# Emulator
-a version ported to windows.
-run build.bat to build it, if you are using 32-bit system, then you need to change the libraries in build.bat to the correspoding 32 bit versions.
-the dlls needed by the program is in the dlls directory.
+The `build.bat` was modified to work on MSYS2 MinGW64. You will need to install the [`mingw-w64-x86_64-gcc`](https://packages.msys2.org/package/mingw-w64-x86_64-gcc) package
+to get g++, which is needed to build the program. Since it uses g++, building may take some time.
 
-The memory editor is modified so the SFRs are now accesible.
-Edit src/Gui/Commands.cpp if you want to change the range of the memory editor.
+You can modify `build.bat` as needed to make it work with different environments and compilers. Or, you can change the build system entirely, but that won't be mentioned here.
+
+Edit `src/Gui/Commands.cpp` if you want to change the range of the memory editor.

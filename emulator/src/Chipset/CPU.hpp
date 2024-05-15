@@ -28,7 +28,7 @@ namespace casioemu
 		template<typename value_type>
 		struct Register : public RegisterStub
 		{
-			Register<value_type>()
+			Register()
 			{
 				type_size = sizeof(value_type);
 				name = "?";
@@ -128,8 +128,6 @@ namespace casioemu
 		reg8_t reg_dsr;
 
 		uint8_t impl_last_dsr;
-
-		uint8_t dsr_mask;
 		
 		bool real_hardware;
 

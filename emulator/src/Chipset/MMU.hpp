@@ -40,6 +40,7 @@ namespace casioemu
 
 		void RegisterRegion(MMURegion *region);
 		void UnregisterRegion(MMURegion *region);
+		MMURegion *GetAddressRegion(size_t offset);
 	};
 }
 

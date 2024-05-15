@@ -130,6 +130,23 @@ namespace casioemu
 				});
 				return 1;
 			}
+			else if (std::strcmp(key, "addr_region") == 0)
+			{
+				// execute Lua function whenever address is written to
+				lua_pushcfunction(lua_state, [](lua_State *lua_state) {
+					if (lua_gettop(lua_state) != 2)
+						return luaL_error(lua_state, "addr_region function called with incorrect number of arguments");
+
+					MMU *mmu = *(MMU **)lua_topointer(lua_state, 1);
+					size_t offset = lua_tointeger(lua_state, 2);
+
+					MMURegion *region = mmu->GetAddressRegion(offset);
+					if (region) logger::Info("Data memory address %02X:%04XH is mapped to region %s\n", offset >> 16, offset & 0xFFFF, region->description.c_str());
+					else logger::Info("Data memory address %02X:%04XH is not mapped to any region\n", offset >> 16, offset & 0xFFFF);
+					return 0;
+				});
+				return 1;
+			}
 			else
 			{
 				return 0;
@@ -315,5 +332,11 @@ namespace casioemu
 				PANIC("MMU region double-hole at %06zX\n", ix);
 			segment_dispatch[ix >> 16][ix & 0xFFFF].region = nullptr;
 		}
+	}
+
+
+	MMURegion *MMU::GetAddressRegion(size_t offset)
+	{
+		return segment_dispatch[offset >> 16][offset & 0xFFFF].region;
 	}
 }

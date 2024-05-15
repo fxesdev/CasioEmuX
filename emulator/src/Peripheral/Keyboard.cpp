@@ -63,7 +63,6 @@ namespace casioemu
 
 		if (!real_hardware)
 		{
-			keyboard_pd_emu = emulator.GetModelInfo("pd_value");
 			keyboard_ready_emu = 1;
 			emu_ki_readcount = 0;
 			emu_ko_readcount = 0;
@@ -102,6 +101,9 @@ namespace casioemu
 					keyboard->keyboard_out_emu = 0;
 				return value;
 			}, MMURegion::IgnoreWrite, emulator);
+		}
+		if ((emulator.hardware_id == HW_ES_PLUS && !real_hardware) || emulator.hardware_id != HW_ES_PLUS) {
+			try { keyboard_pd_emu = emulator.GetModelInfo("pd_value"); } catch(int e) { keyboard_pd_emu = 0; }
 			region_pd_emu.Setup(0xF050, 1, "Keyboard/PdValue", &keyboard_pd_emu, MMURegion::DefaultRead<uint8_t>, MMURegion::IgnoreWrite, emulator);
 		}
 
