@@ -17,7 +17,7 @@
 
 @echo cd "%cd%" > C:\msys64\tmp\temp.sh
 @echo g++ %compiler% %files% %linker% -O2 -o "%output_exe%" >> C:\msys64\tmp\temp.sh
-@echo if [ $? -ne 0 ]; then read -n 1 -s -r -p "Press any key to exit."; done
+@echo if [ $? -ne 0 ]; then read -n 1 -s -r -p "Press any key to exit."; done >> C:\msys64\tmp\temp.sh
 c:\msys64\mingw64 /tmp/temp.sh
 
 @popd
