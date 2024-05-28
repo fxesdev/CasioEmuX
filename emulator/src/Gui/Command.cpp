@@ -9,6 +9,7 @@
 #include <iostream>
 #include "ui.hpp"
 #include "../Chipset/MMU.hpp"
+#include "../Emulator.hpp"
 
 #include "hex.hpp"
 
@@ -33,7 +34,9 @@ void gui_loop(){
     static MemoryEditor mem_edit;
     if(n_ram_buffer!=nullptr&&me_mmu!=nullptr){
         //std::cout<<"renderhex!";
-        mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, 0x7000,0x9000);
+        int start = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0xD000 : 0x9000;
+        int size = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0x3000 : 0x7000;
+        mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, size, start);
     }
     code_viewer->DrawWindow();
     
