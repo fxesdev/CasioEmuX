@@ -27,7 +27,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <editline/readline.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 using namespace casioemu;
 

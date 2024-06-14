@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <editline/readline.h>
+#include <readline/readline.h>
 
 namespace casioemu
 {
