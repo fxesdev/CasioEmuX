@@ -4,7 +4,7 @@ pushd %~dp0%
 
 :: compiler flags
 set compiler=-I"/mingw32/include/SDL2" -I"/mingw32/include/lua5.3" -Wall -pedantic -std=c++2a
-set linker=-lmingw32 -lSDL2main -lSDL2 -lSDL2_image -llua5.3 -lreadline -limgui
+set linker=-lmingw32 -lSDL2main -lSDL2 -lSDL2_image -llua5.3 -lreadline
 
 set files=src/*.cpp src/*/*.cpp src/Gui/imgui/*.cpp
 

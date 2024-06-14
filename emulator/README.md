@@ -18,7 +18,7 @@ You can modify `build.bat` as needed to make it work with different environments
 ## Linux
 For Ubuntu and similar distros, you will need to install these packages:
 ```shell
-sudo apt install gcc liblua53-dev libsdl2-dev libsdl2image-dev
+sudo apt install gcc liblua53-dev libsdl2-dev libsdl2image-dev libimgui-dev
 ```
 
 Then just run the `build.sh` script. Since it uses g++, building may take some time.
