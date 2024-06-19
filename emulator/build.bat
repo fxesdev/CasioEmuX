@@ -14,6 +14,6 @@ set output_exe=emulator.exe
 echo cd "%cd%" > C:\msys64\tmp\temp.sh
 echo g++ %compiler% %files% %linker% -O2 -o "%output_exe%" >> C:\msys64\tmp\temp.sh
 echo if [ $? -ne 0 ]; then read -n 1 -s -r -p "Press any key to exit."; fi >> C:\msys64\tmp\temp.sh
-c:\msys64\mingw64 /tmp/temp.sh
+c:\msys64\mingw32 /tmp/temp.sh
 
 popd
