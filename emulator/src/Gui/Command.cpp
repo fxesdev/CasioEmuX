@@ -34,9 +34,8 @@ void gui_loop(){
     static MemoryEditor mem_edit;
     if(n_ram_buffer!=nullptr&&me_mmu!=nullptr){
         //std::cout<<"renderhex!";
-        int start = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0xD000 : 0x9000;
-        int size = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0x3000 : 0x7000;
-        mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, size, start);
+        int n_ram_base = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0xD000 : 0x9000;
+        mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, 0x10000 - n_ram_base, n_ram_base);
     }
     code_viewer->DrawWindow();
     

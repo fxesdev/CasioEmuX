@@ -40,15 +40,19 @@ namespace casioemu
 
 	ModelInfo::operator SpriteInfo()
 	{
-		lua_geti(emulator.lua_state, LUA_REGISTRYINDEX, emulator.lua_model_ref);
-		if (lua_getfield(emulator.lua_state, -1, key.c_str()) != LUA_TTABLE)
-			PANIC("key '%s' is not a table\n", key.c_str());
+		SpriteInfo sprite_info;
 
+		lua_geti(emulator.lua_state, LUA_REGISTRYINDEX, emulator.lua_model_ref);
+		if (lua_getfield(emulator.lua_state, -1, key.c_str()) != LUA_TTABLE) {
+			sprite_info.src.x = sprite_info.src.y = sprite_info.src.w = sprite_info.src.h = 0;
+			sprite_info.dest.x = sprite_info.dest.y = sprite_info.dest.w = sprite_info.dest.h = 0;
+			return sprite_info;
+		}
+		
 		for (int ix = 0; ix != 6; ++ix)
 			if (lua_geti(emulator.lua_state, -1 - ix, ix + 1) != LUA_TNUMBER)
 				PANIC("key '%s'[%i] is not a number\n", key.c_str(), ix + 1);
 
-		SpriteInfo sprite_info;
 		sprite_info.src.x = lua_tointeger(emulator.lua_state, -6);
 		sprite_info.src.y = lua_tointeger(emulator.lua_state, -5);
 		sprite_info.src.w = lua_tointeger(emulator.lua_state, -4);

@@ -8,17 +8,15 @@ namespace casioemu
 {
 	class ExternalInterrupts : public Peripheral
 	{
-		MMURegion region_EXICON, region_F048, region_F049, region_F04A, region_F04B, region_F04C;
-        uint8_t data_F048, data_F049, data_F04A, data_F04B, data_F04C;
+		MMURegion region_EXICON;
 
-        bool pin_level_1, pin_level_2, pin_level_3;
-
-        size_t EXI1INT = 1;
-        size_t EXI2INT = 2;
-        size_t EXI3INT = 3;
+		//EXI1INT to EXI3INT; EXI0INT is handled by keyboard.
+        size_t EXIINTS[3] = {1, 2, 3};
 
 	public:
 		using Peripheral::Peripheral;
+
+		void UpdateInputLevel(int pin, bool value);
 
 		void Initialise();
 		void Reset();

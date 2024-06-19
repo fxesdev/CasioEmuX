@@ -29,7 +29,7 @@ CodeViewer::CodeViewer(std::string path) {
         while (!f.eof()) {
             f.getline(buf, 200);
             // 1sf, extract segment number
-            uint8_t seg = buf[1] - '0';
+            uint8_t seg = buf[1] <= '9' ? buf[1] - '0' : buf[1] - 'A' + 10;
             uint8_t len = strlen(buf);
             if (!len)
                 break;

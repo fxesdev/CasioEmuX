@@ -170,27 +170,34 @@ namespace casioemu
 		if (offset & 1)
 			PANIC("offset has LSB set\n");
 
-		size_t segment_index = offset >> 16;
-		size_t segment_offset = offset & 0xFFFF;
-
-		if (!segment_index)
-			return (((uint16_t)emulator.chipset.rom_data[segment_offset + 1]) << 8) | emulator.chipset.rom_data[segment_offset];
-
-		MemoryByte *segment = segment_dispatch[segment_index];
-		if (!segment)
-		{
-			emulator.HandleMemoryError();
+		if(offset < emulator.chipset.rom_data.size())
+			return (((uint16_t)emulator.chipset.rom_data[offset + 1]) << 8) | emulator.chipset.rom_data[offset];
+		
+		if(real_hardware)
+			return 0xFFFF;
+		else
 			return 0;
-		}
+		// size_t segment_index = offset >> 16;
+		// size_t segment_offset = offset & 0xFFFF;
 
-		MMURegion *region = segment[segment_offset].region;
-		if (!region)
-		{
-			emulator.HandleMemoryError();
-			return 0;
-		}
+		// if (!segment_index)
+		// 	return (((uint16_t)emulator.chipset.rom_data[segment_offset + 1]) << 8) | emulator.chipset.rom_data[segment_offset];
 
-		return (((uint16_t)region->read(region, offset + 1)) << 8) | region->read(region, offset);
+		// MemoryByte *segment = segment_dispatch[segment_index];
+		// if (!segment)
+		// {
+		// 	emulator.HandleMemoryError();
+		// 	return 0;
+		// }
+
+		// MMURegion *region = segment[segment_offset].region;
+		// if (!region)
+		// {
+		// 	emulator.HandleMemoryError();
+		// 	return 0;
+		// }
+
+		// return (((uint16_t)region->read(region, offset + 1)) << 8) | region->read(region, offset);
 	}
 
 	uint8_t MMU::ReadData(size_t offset, bool softwareRead)

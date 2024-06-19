@@ -449,6 +449,11 @@ namespace casioemu
 		memory_model = _memory_model;
 	}
 
+	void CPU::SetCPUModel(CPUModel _cpu_model)
+	{
+		cpu_model = _cpu_model;
+	}
+
 	void CPU::Reset()
 	{
 		reg_sp = emulator.chipset.mmu.ReadCode(0);

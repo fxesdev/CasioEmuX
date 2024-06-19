@@ -12,7 +12,7 @@ namespace casioemu
 	{
 		impl_operands[0].value |= (impl_operands[0].value & 0x80) ? 0xFF00 : 0;
 		reg_sp += impl_operands[0].value;
-		if(real_hardware) {
+		if(cpu_model == CM_NX_U16) {
 			reg_sp &= 0xfffe;
 		}
 	}
@@ -48,7 +48,7 @@ namespace casioemu
 			if (reg_psw & PSW_ELEVEL) {
 				impl_operands[0].value = reg_epsw[reg_psw & PSW_ELEVEL];
 			} else {
-				if(real_hardware) {
+				if(cpu_model == CM_NX_U16) {
 					impl_operands[0].value = 0xFF;
 				}
 			}
@@ -58,7 +58,7 @@ namespace casioemu
 			break;
 		case 11:
 			reg_sp = impl_operands[1].value;
-			if(real_hardware) {
+			if(cpu_model == CM_NX_U16) {
 				reg_sp &= 0xfffe;
 			}
 			break;

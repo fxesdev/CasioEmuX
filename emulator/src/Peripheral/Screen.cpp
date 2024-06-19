@@ -121,11 +121,13 @@ namespace casioemu
 		SPR_G,
 		SPR_FIX,
 		SPR_SCI,
+		SPR_FX,
 		SPR_E,
 		SPR_CMPLX,
 		SPR_ANGLE,
 		SPR_WDOWN,
 		SPR_VERIFY,
+		SPR_GX,
 		SPR_LEFT,
 		SPR_DOWN,
 		SPR_UP,
@@ -197,11 +199,13 @@ namespace casioemu
 		{"rsd_g",     0x01, 0x06},
 		{"rsd_fix",   0x01, 0x07},
 		{"rsd_sci",   0x01, 0x08},
+		{"rsd_fx",    0x01, 0x09},
 		{"rsd_e",     0x01, 0x0A},
 		{"rsd_cmplx", 0x01, 0x0B},
 		{"rsd_angle", 0x01, 0x0C},
 		{"rsd_wdown", 0x01, 0x0D},
 		{"rsd_verify",0x01, 0x0E},
+		{"rsd_gx",    0x01, 0x0F},
 		{"rsd_left",  0x01, 0x10},
 		{"rsd_down",  0x01, 0x11},
 		{"rsd_up",    0x01, 0x12},
@@ -376,7 +380,7 @@ namespace casioemu
 		int ink_alpha_on = 20 + screen_contrast * 16;
 		if (ink_alpha_on > 255)
 			ink_alpha_on = 255;
-		int ink_alpha_off = (screen_contrast - 8) * 5;
+		int ink_alpha_off = (screen_contrast - 8) * 2;
 		if (ink_alpha_off < 0)
 			ink_alpha_off = 0;
 
@@ -413,7 +417,7 @@ namespace casioemu
 		if (enable_status)
 		{
 			int ink_alpha = ink_alpha_off;
-			if(emulator.hardware_id == HW_CLASSWIZ_II) {
+			if(emulator.hardware_id == HW_CLASSWIZ_II && emulator.GetModelInfo("real_hardware")) {
 				for (int ix = Sprite::SPR_PIXEL + 1; ix != Sprite::SPR_MAX; ++ix)
 				{
 					ink_alpha = ink_alpha_off;

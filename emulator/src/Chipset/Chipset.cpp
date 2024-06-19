@@ -20,6 +20,7 @@
 #include "../Peripheral/RealTimeClock.hpp"
 #include "../Peripheral/WatchdogTimer.hpp"
 #include "../Peripheral/ExternalInterrupts.hpp"
+#include "../Peripheral/IOPorts.hpp"
 
 #include "../Gui/ui.hpp"
 
@@ -41,10 +42,13 @@ namespace casioemu
 		pending_interrupt_count = 0;
 
 		cpu.SetMemoryModel(CPU::MM_LARGE);
+		cpu.SetCPUModel(emulator.hardware_id == HW_CLASSWIZ || emulator.hardware_id == HW_CLASSWIZ_II ? CPU::CM_NX_U16 : CPU::CM_NX_U8);
 
 		std::initializer_list<int> segments_es_plus{ 0, 1, 8 }, segments_classwiz{ 0, 1, 2, 3, 4, 5 }, segments_classwiz_ii{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 		for (auto segment_index : emulator.hardware_id == HW_ES_PLUS ? segments_es_plus : emulator.hardware_id == HW_CLASSWIZ ? segments_classwiz : segments_classwiz_ii)
 			mmu.GenerateSegmentDispatch(segment_index);
+
+		real_hardware = emulator.GetModelInfo("real_hardware");
 
 		ConstructPeripherals();
 	}
@@ -186,6 +190,15 @@ namespace casioemu
 	}
 
 	void Chipset::GenerateTickForClock() {
+		if(!real_hardware) {
+			if(++SYSCLKTickCounter >= 2) {
+				SYSCLKTick = true;
+				SYSCLKTickCounter = 0;
+			}
+			HSCLKTick = LSCLKTick = SYSCLKTick;
+			return;
+		}
+		
 		//Generate HSCLK Tick
 		if(run_mode != RM_STOP) {
 			if(++HSCLKTickCounter >= ClockDiv) {
@@ -285,10 +298,14 @@ namespace casioemu
 			}
 		}, emulator);
 
+		ioport = new IOPorts(emulator);
+		EXIhandle = new ExternalInterrupts(emulator);
+
 		peripherals.push_front(new ROMWindow(emulator));
 		peripherals.push_front(new BatteryBackedRAM(emulator));
 		peripherals.push_front(CreateScreen(emulator));
-		peripherals.push_front(new ExternalInterrupts(emulator));
+		peripherals.push_front(ioport);
+		peripherals.push_front(EXIhandle);
 		peripherals.push_front(new Keyboard(emulator));
 		peripherals.push_front(new StandbyControl(emulator));
 		peripherals.push_front(new Miscellaneous(emulator));
@@ -550,6 +567,42 @@ namespace casioemu
 		return std::any_of(peripherals.begin(), peripherals.end(), [](Peripheral *peripheral){
 			return peripheral->GetRequireFrame();
 		});
+	}
+
+	void Chipset::InputToPort(int port, int pin, bool value) {
+		if(port == 0) {
+			if(pin < 1 || pin > 3)
+				PANIC("Trying to input to invalid pin %d of Port0!", pin);
+			UserInput_level_Port0[pin - 1] = value;
+			UserInput_state_Port0[pin - 1] = true;
+			ioport->AcceptInput(0, pin - 1);
+		} else if(port == 1) {
+			if(pin < 0 || pin > 6)
+				PANIC("Trying to input to invalid pin %d of Port1!", pin);
+			UserInput_level_Port1[pin] = value;
+			UserInput_state_Port1[pin] = true;
+			ioport->AcceptInput(1, pin);
+		} else {
+			PANIC("Trying to input to invalid port %d!", port);
+		}
+	}
+
+	void Chipset::RemovePortInput(int port, int pin) {
+		if(port == 0) {
+			if(pin < 1 || pin > 3)
+				PANIC("Trying to remove input from invalid pin %d of Port0!", pin);
+			UserInput_level_Port0[pin - 1] = false;
+			UserInput_state_Port0[pin - 1] = false;
+			ioport->AcceptInput(0, pin - 1);
+		} else if(port == 1) {
+			if(pin < 0 || pin > 6)
+				PANIC("Trying to remove input from invalid pin %d of Port1!", pin);
+			UserInput_level_Port1[pin] = false;
+			UserInput_state_Port1[pin] = false;
+			ioport->AcceptInput(1, pin);
+		} else {
+			PANIC("Trying to remove input from invalid port %d!", port);
+		}
 	}
 
 	void Chipset::Frame()

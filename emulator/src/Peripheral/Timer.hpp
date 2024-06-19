@@ -22,7 +22,7 @@ namespace casioemu
 		size_t TimerFreqDiv;
 
 		unsigned int cycles_per_second;
-		static const uint64_t ext_to_int_frequency = 10000;
+		static const uint64_t ext_to_int_frequency = 16384;
 
 	public:
 		using Peripheral::Peripheral;

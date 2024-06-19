@@ -118,6 +118,15 @@ namespace casioemu
 		} memory_model;
 
 		/**
+		 * Classwiz models use nX-U16 cpu.
+		 */
+		enum CPUModel
+		{
+			CM_NX_U8,
+			CM_NX_U16
+		} cpu_model;
+
+		/**
 		 * See 1.2.1 in the nX-U8 manual.
 		 */
 		reg8_t reg_r[16], reg_cr[16];
@@ -134,6 +143,7 @@ namespace casioemu
 		bool real_hardware;
 
 		void SetMemoryModel(MemoryModel memory_model);
+		void SetCPUModel(CPUModel cpu_model);
 		void Next();
 		void Reset();
 		void Raise(size_t exception_level, size_t index);

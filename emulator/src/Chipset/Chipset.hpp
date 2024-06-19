@@ -4,6 +4,9 @@
 #include "MMURegion.hpp"
 #include "InterruptSource.hpp"
 
+#include "../Peripheral/IOPorts.hpp"
+#include "../Peripheral/ExternalInterrupts.hpp"
+
 #include <string>
 #include <vector>
 #include <forward_list>
@@ -71,6 +74,8 @@ namespace casioemu
 		long long LSCLKTickCounter, HSCLKTickCounter, HSCLKTimeCounter, SYSCLKTickCounter, LSCLKTimeCounter, LSCLKThresh;
 		int LSCLKFreqAddition;
 
+		bool real_hardware;
+
 	public:
 		Chipset(Emulator &emulator);
 		void Setup(); // must be called after emulator.hardware_id is initialized
@@ -83,6 +88,10 @@ namespace casioemu
 
 		InterruptSource* MaskableInterrupts;
 		size_t EffectiveMICount;
+
+		//Reserve these pointers to make it easy for other peripherals to input to pins.
+		IOPorts* ioport;
+		ExternalInterrupts* EXIhandle;
 
 		bool WDT_enabled = false;
 
@@ -105,6 +114,17 @@ namespace casioemu
 		bool LTBCReset, HTBCReset;
 
 		const int HTBROutputCount = 128;
+
+		/*
+		* Pin levels.0 for L level, 1 for H level.
+		* The external interrupts are controlled by Keyboard and ExternalInterrupts.These values could still be accessed by other peripherals.
+		* P00 should be used as keyboard ki/ko.
+		* We dont know the name of the port controlled by F220h.
+		*/
+		bool Port0Inputlevel[3], Port1Inputlevel[7];//The actual pin level inputted to the chip
+		bool Port0Outputlevel[3], Port1Outputlevel[7];//The pin level that could be directly read from the pins
+		bool UserInput_level_Port0[3], UserInput_level_Port1[7];//The voltage attached directly to the pins
+		bool UserInput_state_Port0[3], UserInput_state_Port1[7];//Marks if there is user input
 
 		bool SegmentAccess;
 
@@ -135,6 +155,8 @@ namespace casioemu
 		void ResetMaskable(size_t index);
 		void SetInterruptPendingSFR(size_t index, bool val);
 		bool GetInterruptPendingSFR(size_t index);
+		void InputToPort(int, int, bool);
+		void RemovePortInput(int, int);
 
 		void Tick();
 		bool GetRequireFrame();
