@@ -1,6 +1,8 @@
 #include "MMU.hpp"
 
+#include <vector>
 #include <cstring>
+#include <algorithm>
 #include "../Emulator.hpp"
 #include "Chipset.hpp"
 #include "../Logger.hpp"
@@ -329,6 +331,7 @@ namespace casioemu
 				PANIC("MMU region overlap at %06zX\n", ix);
 			segment_dispatch[ix >> 16][ix & 0xFFFF].region = region;
 		}
+		regions.push_back(region);
 	}
 
 	void MMU::UnregisterRegion(MMURegion *region)
@@ -339,6 +342,7 @@ namespace casioemu
 				PANIC("MMU region double-hole at %06zX\n", ix);
 			segment_dispatch[ix >> 16][ix & 0xFFFF].region = nullptr;
 		}
+		regions.erase(std::find(regions.begin(), regions.end(), region));
 	}
 
 
@@ -346,4 +350,9 @@ namespace casioemu
 	{
 		return segment_dispatch[offset >> 16][offset & 0xFFFF].region;
 	}
+
+	std::vector<MMURegion*> MMU::GetRegions() {
+		return regions;
+	}
 }
+

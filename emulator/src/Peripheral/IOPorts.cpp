@@ -13,7 +13,7 @@ namespace casioemu
         memset(emulator.chipset.UserInput_level_Port1, 0, 7 * sizeof(bool));
         memset(emulator.chipset.UserInput_state_Port1, 0, 7 * sizeof(bool));
 
-        region_port0_data.Setup(emulator.hardware_id == HW_FX_5800P ? 0xF046 : 0xF048, 1, "Port0/Data", this, [](MMURegion* region, size_t) {
+        region_port0_data.Setup(emulator.hardware_id == HW_5800P ? 0xF046 : 0xF048, 1, "Port0/Data", this, [](MMURegion* region, size_t) {
             IOPorts* ioports = (IOPorts*)region->userdata;
             uint8_t data = 0;
             for(int i = 0; i < 3; i++) {
@@ -29,12 +29,12 @@ namespace casioemu
             ioports->port0_output = data;
         }, emulator);
         
-        region_port0_mode.Setup(emulator.hardware_id == HW_FX_5800P ? 0xF047 : 0xF049, 1, "Port0/Mode", &port0_mode, MMURegion::DefaultRead<uint8_t, 0x01>, MMURegion::DefaultWrite<uint8_t, 0x01>, emulator);
+        region_port0_mode.Setup(emulator.hardware_id == HW_5800P ? 0xF047 : 0xF049, 1, "Port0/Mode", &port0_mode, MMURegion::DefaultRead<uint8_t, 0x01>, MMURegion::DefaultWrite<uint8_t, 0x01>, emulator);
 
-        region_port0_control_0.Setup(emulator.hardware_id == HW_FX_5800P ? 0xF048 : 0xF04A, 1, "Port0/Control0", this, IOPorts::DefaultRead<3, &IOPorts::port0_control_0>, IOPorts::UpdateInputLevelWrite<3, 0, &IOPorts::port0_control_0>, emulator);
-        region_port0_control_1.Setup(emulator.hardware_id == HW_FX_5800P ? 0xF049 : 0xF04B, 1, "Port0/Control1", this, IOPorts::DefaultRead<3, &IOPorts::port0_control_1>, IOPorts::UpdateInputLevelWrite<3, 0, &IOPorts::port0_control_1>, emulator);
+        region_port0_control_0.Setup(emulator.hardware_id == HW_5800P ? 0xF048 : 0xF04A, 1, "Port0/Control0", this, IOPorts::DefaultRead<3, &IOPorts::port0_control_0>, IOPorts::UpdateInputLevelWrite<3, 0, &IOPorts::port0_control_0>, emulator);
+        region_port0_control_1.Setup(emulator.hardware_id == HW_5800P ? 0xF049 : 0xF04B, 1, "Port0/Control1", this, IOPorts::DefaultRead<3, &IOPorts::port0_control_1>, IOPorts::UpdateInputLevelWrite<3, 0, &IOPorts::port0_control_1>, emulator);
 
-        region_port0_direction.Setup(emulator.hardware_id == HW_FX_5800P ? 0xF04A : 0xF04C, 1, "Port0/Direction", this, [](MMURegion* region, size_t) {
+        region_port0_direction.Setup(emulator.hardware_id == HW_5800P ? 0xF04A : 0xF04C, 1, "Port0/Direction", this, [](MMURegion* region, size_t) {
             IOPorts* ioports = (IOPorts*)region->userdata;
             return (uint8_t)(ioports->port0_direction & 0x07);
         }, [](MMURegion* region, size_t, uint8_t data) {

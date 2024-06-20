@@ -27,7 +27,7 @@ namespace casioemu
 		LoadModelDefition();
 
 		int hardware_id = GetModelInfo("hardware_id");
-		if (hardware_id != HW_ES_PLUS && hardware_id != HW_CLASSWIZ && hardware_id != HW_CLASSWIZ_II)
+		if (hardware_id != HW_ES_PLUS && hardware_id != HW_CLASSWIZ && hardware_id != HW_CLASSWIZ_II && hardware_id != HW_5800P)
 			PANIC("Unknown hardware id %d\n", hardware_id);
 		this->hardware_id = (HardwareId)hardware_id;
 
