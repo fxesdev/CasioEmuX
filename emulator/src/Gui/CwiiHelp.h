@@ -149,7 +149,6 @@ namespace cwii {
                 base += "(Simp)";
             }
             return base;
-        }
 		}
 		case 0x8: {
 			auto numbersign2 = 1;
