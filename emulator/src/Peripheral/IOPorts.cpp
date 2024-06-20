@@ -46,10 +46,12 @@ namespace casioemu
                 if(!(changed_data & (1 << i)))
                     continue;
                 //When the pin is set to output mode, the signal inputted to the chip is recognized as H level.
-                //When a pin is switched from output mode to input mode, it will always trigger a falling-edge interrupt first.
+                //When a pin is switched from output mode to input mode, it will trigger a falling-edge interrupt first if there's no H level input to this pin,
+                //even if it's set to input mode with a pull-up resistor.
                 if(data & (1 << i)) {
-                    ioports->emulator.chipset.EXIhandle->UpdateInputLevel(i + 1, false);
-                    ioports->emulator.chipset.Port0Inputlevel[i] = false;
+                    bool pin_level_released = ioports->emulator.chipset.UserInput_state_Port0[i] && ioports->emulator.chipset.UserInput_level_Port0[i];
+                    ioports->emulator.chipset.EXIhandle->UpdateInputLevel(i + 1, pin_level_released);
+                    ioports->emulator.chipset.Port0Inputlevel[i] = pin_level_released;
                     ioports->AcceptInput(0, i);
                 } else {
                     ioports->emulator.chipset.EXIhandle->UpdateInputLevel(i + 1, true);
@@ -87,7 +89,7 @@ namespace casioemu
                 if(!(changed_data & (1 << i)))
                     continue;
                 if(data & (1 << i)) {
-                    ioports->emulator.chipset.Port1Inputlevel[i] = false;
+                    ioports->emulator.chipset.Port1Inputlevel[i] = ioports->emulator.chipset.UserInput_state_Port1[i] && ioports->emulator.chipset.UserInput_level_Port1[i];
                     ioports->AcceptInput(1, i);
                 } else {
                     ioports->emulator.chipset.Port1Inputlevel[i] = true;
