@@ -1,0 +1,12 @@
+[submodule "emulator/src/Gui/imgui"]
+	path = emulator/src/Gui/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "emulator/src/Gui/imgui_club"]
+	path = emulator/src/Gui/imgui_club
+	url = https://github.com/ocornut/imgui_club.git
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "imgui_club"]
+	path = imgui_club
+	url = https://github.com/ocornut/imgui_club.git

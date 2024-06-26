@@ -80,13 +80,9 @@ namespace casioemu
 				return keyboard->keyboard_ready_emu;
 			}, [](MMURegion *region, size_t offset, uint8_t data) {
 				Keyboard *keyboard = ((Keyboard *)region->userdata);
-				if(data == 8) {
+				if(data == 2 || data == 8) {
 					keyboard->emulator.chipset.EmuTimerSkipped = true;
-					if(keyboard->keyboard_in_emu == 4 && keyboard->keyboard_out_emu == 16) {
-						keyboard->keyboard_ready_emu = 1;
-					} else {
-						keyboard->keyboard_ready_emu = 0;
-					}
+					keyboard->keyboard_ready_emu = (keyboard->keyboard_in_emu == 4 && keyboard->keyboard_out_emu == 16) ? 1 : 0;
 					return;
 				} else if(data == 4) {
 					keyboard->emulator.chipset.EmuTimerSkipped = true;
