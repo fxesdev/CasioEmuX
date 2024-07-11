@@ -139,6 +139,8 @@ namespace casioemu
 		uint8_t impl_last_dsr;
 
 		uint8_t dsr_mask;
+
+		bool cpu_run_stat;
 		
 		bool real_hardware;
 

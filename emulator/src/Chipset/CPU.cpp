@@ -251,10 +251,11 @@ namespace casioemu
 		impl_csr_mask = emulator.GetModelInfo("csr_mask");
 		real_hardware = emulator.GetModelInfo("real_hardware");
 		
-		//Only tested on fx-991cnx
-		dsr_mask = emulator.hardware_id == HW_CLASSWIZ ? 0x1F : 0xFF;
+		//Only tested on classwiz models
+		dsr_mask = (emulator.hardware_id == HW_CLASSWIZ || emulator.hardware_id == HW_CLASSWIZ_II) ? 0x1F : 0xFF;
 
 		fetch_addition = 2;
+		cpu_run_stat = true;
 	}
 
 	void CPU::SetupOpcodeDispatch()
@@ -377,6 +378,9 @@ namespace casioemu
 
 	void CPU::Next()
 	{
+		if (!cpu_run_stat)
+			return;
+
 		/**
 		 * `reg_dsr` only affects the current instruction. The old DSR is stored in
 		 * `impl_last_dsr` and is recalled every time a DSR instruction is encountered
@@ -460,6 +464,7 @@ namespace casioemu
 		reg_dsr = 0;
 		reg_psw = 0;
 		fetch_addition = 2;
+		cpu_run_stat = true;
 		stack.clear();
 	}
 

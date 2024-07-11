@@ -21,6 +21,7 @@
 #include "../Peripheral/WatchdogTimer.hpp"
 #include "../Peripheral/ExternalInterrupts.hpp"
 #include "../Peripheral/IOPorts.hpp"
+#include "../Peripheral/Flash.hpp"
 
 #include "../Gui/ui.hpp"
 
@@ -44,8 +45,12 @@ namespace casioemu
 		cpu.SetMemoryModel(CPU::MM_LARGE);
 		cpu.SetCPUModel(emulator.hardware_id == HW_CLASSWIZ || emulator.hardware_id == HW_CLASSWIZ_II ? CPU::CM_NX_U16 : CPU::CM_NX_U8);
 
-		std::initializer_list<int> segments_es_plus{ 0, 1, 8 }, segments_classwiz{ 0, 1, 2, 3, 4, 5 }, segments_classwiz_ii{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-		for (auto segment_index : emulator.hardware_id == HW_ES_PLUS ? segments_es_plus : emulator.hardware_id == HW_CLASSWIZ ? segments_classwiz : segments_classwiz_ii)
+		//Add the segment index here if you want to register a MMURegion in a certain data segment; Read from unregistered data segments will return 0.
+		std::initializer_list<int> segments_es_plus{ 0, 1, 8 }, segments_classwiz{ 0, 1, 2, 3, 4, 5, 31 },
+		                           segments_classwiz_ii{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 31 },
+								   segments_fx_5800p{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+		for (auto segment_index : emulator.hardware_id == HW_ES_PLUS ? segments_es_plus : emulator.hardware_id == HW_CLASSWIZ ? segments_classwiz :
+		                          emulator.hardware_id == HW_CLASSWIZ_II ? segments_classwiz_ii : segments_fx_5800p)
 			mmu.GenerateSegmentDispatch(segment_index);
 
 		real_hardware = emulator.GetModelInfo("real_hardware");
@@ -65,7 +70,7 @@ namespace casioemu
 
 	void Chipset::ConstructInterruptSFR()
 	{
-		EffectiveMICount = emulator.hardware_id == HW_ES_PLUS ? 12 : emulator.hardware_id == HW_CLASSWIZ ? 17 : 21;
+		EffectiveMICount = emulator.hardware_id == HW_ES_PLUS ? 12 : emulator.hardware_id == HW_CLASSWIZ ? 17 : emulator.hardware_id == HW_CLASSWIZ_II ? 21 : 10;
 		MaskableInterrupts = new InterruptSource[EffectiveMICount];
 		for(size_t i = 0; i < EffectiveMICount; i++) {
 			MaskableInterrupts[i].Setup(i + INT_MASKABLE, emulator);
@@ -298,6 +303,8 @@ namespace casioemu
 			}
 		}, emulator);
 
+		flash = new Flash(emulator);
+
 		ioport = new IOPorts(emulator);
 		EXIhandle = new ExternalInterrupts(emulator);
 
@@ -316,6 +323,8 @@ namespace casioemu
 		peripherals.push_front(new WatchdogTimer(emulator));
 		if (emulator.hardware_id == HW_CLASSWIZ_II)
 			peripherals.push_front(new BCDCalc(emulator));
+		if (emulator.hardware_id != HW_ES_PLUS)
+			peripherals.push_front(flash);
 	}
 
 	void Chipset::DestructPeripherals()
@@ -353,6 +362,8 @@ namespace casioemu
 
 		ResetClockGenerator();
 
+		HWRemap = false;
+
 		SegmentAccess = false;
 		data_BLKCON = 0;
 
@@ -371,7 +382,10 @@ namespace casioemu
 	{
 		if (cpu.GetExceptionLevel() > 1)
 		{
-			Reset();
+			cpu.Reset();
+
+			interrupts_active[INT_RESET] = true;
+			pending_interrupt_count++;
 			return;
 		}
 

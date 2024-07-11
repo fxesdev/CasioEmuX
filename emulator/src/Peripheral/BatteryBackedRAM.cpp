@@ -25,6 +25,9 @@ namespace casioemu
 		case HW_CLASSWIZ_II:
 			ram_size = 0x6000;
 			break;
+		case HW_FX_5800P:
+			ram_size = 0x8E00;
+			break;
 		}
 		if (!real_hardware)
 			ram_size += 0x100;
@@ -42,20 +45,28 @@ namespace casioemu
 				LoadRAMImage();
 		}
 
-		region.Setup(emulator.hardware_id == HW_ES_PLUS ? 0x8000 : emulator.hardware_id == HW_CLASSWIZ ? 0xD000 : 0x9000,
-			emulator.hardware_id == HW_ES_PLUS ? 0x0E00 : emulator.hardware_id == HW_CLASSWIZ ? 0x2000 : 0x6000 ,
+		region.Setup(emulator.hardware_id == HW_ES_PLUS || emulator.hardware_id == HW_FX_5800P ? 0x8000 : emulator.hardware_id == HW_CLASSWIZ ? 0xD000 : 0x9000,
+			emulator.hardware_id == HW_ES_PLUS || emulator.hardware_id == HW_FX_5800P ? 0x0E00 : emulator.hardware_id == HW_CLASSWIZ ? 0x2000 : 0x6000,
 			"BatteryBackedRAM", ram_buffer, [](MMURegion *region, size_t offset) {
 			return ((uint8_t *)region->userdata)[offset - region->base];
 		}, [](MMURegion *region, size_t offset, uint8_t data) {
 			((uint8_t *)region->userdata)[offset - region->base] = data;
 		}, emulator);
+
 		if (!real_hardware)
 			region_2.Setup(emulator.hardware_id == HW_ES_PLUS ? 0x9800 : emulator.hardware_id == HW_CLASSWIZ ? 0x49800 : 0x89800, 0x0100,
-				"BatteryBackedRAM/2", ram_buffer + ram_size - 0x100, [](MMURegion* region, size_t offset) {
-					return ((uint8_t*)region->userdata)[offset - region->base];
-				}, [](MMURegion* region, size_t offset, uint8_t data) {
-					((uint8_t*)region->userdata)[offset - region->base] = data;
-				}, emulator);
+			"BatteryBackedRAM/2", ram_buffer + ram_size - 0x100, [](MMURegion* region, size_t offset) {
+				return ((uint8_t*)region->userdata)[offset - region->base];
+			}, [](MMURegion* region, size_t offset, uint8_t data) {
+				((uint8_t*)region->userdata)[offset - region->base] = data;
+			}, emulator);
+		else if (emulator.hardware_id == HW_FX_5800P)
+			region_2.Setup(0x40000, 0x8000, "BatteryBackedRAM/2", ram_buffer + 0xE00, [](MMURegion* region, size_t offset) {
+				return ((uint8_t*)region->userdata)[offset - region->base];
+			}, [](MMURegion* region, size_t offset, uint8_t data) {
+				((uint8_t*)region->userdata)[offset - region->base] = data;
+			}, emulator);
+
 		n_ram_buffer =(char*) ram_buffer;
 		logger::Info("inited hex editor!\n");
 	}

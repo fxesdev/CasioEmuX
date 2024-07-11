@@ -41,33 +41,45 @@ namespace casioemu
 
 		region_input_filter.Setup(0xF042, 1, "Keyboard/InputFilter", &input_filter, MMURegion::DefaultRead<uint8_t>, MMURegion::DefaultWrite<uint8_t>, emulator);
 
-		region_ko_mask.Setup(0xF044, 2, "Keyboard/KOMask", this, [](MMURegion *region, size_t offset) {
-			offset -= region->base;
-			Keyboard *keyboard = ((Keyboard *)region->userdata);
-			return (uint8_t)((keyboard->keyboard_out_mask & 0x03FF) >> (offset * 8));
-		}, [](MMURegion *region, size_t offset, uint8_t data) {
-			offset -= region->base;
-			Keyboard *keyboard = ((Keyboard *)region->userdata);
-			keyboard->keyboard_out_mask &= ~(((uint16_t)0xFF) << (offset * 8));
-			keyboard->keyboard_out_mask |= ((uint16_t)data) << (offset * 8);
-			keyboard->keyboard_out_mask &= 0x03FF;
-			if (!offset)
+		if(emulator.hardware_id == HW_FX_5800P) {
+			region_ko.Setup(0xF044, 1, "Keyboard/KO", this, [](MMURegion *region, size_t offset) {
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				return (uint8_t)(~(keyboard->keyboard_out & 0xFF));
+			}, [](MMURegion *region, size_t offset, uint8_t data) {
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				keyboard->keyboard_out = (uint16_t)(~data);
+				keyboard->keyboard_out &= 0xFF;
 				keyboard->RecalculateKI();
-		}, emulator);
+			}, emulator);
+		} else {
+			region_ko_mask.Setup(0xF044, 2, "Keyboard/KOMask", this, [](MMURegion *region, size_t offset) {
+				offset -= region->base;
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				return (uint8_t)((keyboard->keyboard_out_mask & 0x03FF) >> (offset * 8));
+			}, [](MMURegion *region, size_t offset, uint8_t data) {
+				offset -= region->base;
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				keyboard->keyboard_out_mask &= ~(((uint16_t)0xFF) << (offset * 8));
+				keyboard->keyboard_out_mask |= ((uint16_t)data) << (offset * 8);
+				keyboard->keyboard_out_mask &= 0x03FF;
+				if (!offset)
+					keyboard->RecalculateKI();
+			}, emulator);
 
-		region_ko.Setup(0xF046, 2, "Keyboard/KO", this, [](MMURegion *region, size_t offset) {
-			offset -= region->base;
-			Keyboard *keyboard = ((Keyboard *)region->userdata);
-			return (uint8_t)((keyboard->keyboard_out & 0x83FF) >> (offset * 8));
-		}, [](MMURegion *region, size_t offset, uint8_t data) {
-			offset -= region->base;
-			Keyboard *keyboard = ((Keyboard *)region->userdata);
-			keyboard->keyboard_out &= ~(((uint16_t)0xFF) << (offset * 8));
-			keyboard->keyboard_out |= ((uint16_t)data) << (offset * 8);
-			keyboard->keyboard_out &= 0x83FF;
-			if (!offset)
-				keyboard->RecalculateKI();
-		}, emulator);
+			region_ko.Setup(0xF046, 2, "Keyboard/KO", this, [](MMURegion *region, size_t offset) {
+				offset -= region->base;
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				return (uint8_t)((keyboard->keyboard_out & 0x83FF) >> (offset * 8));
+			}, [](MMURegion *region, size_t offset, uint8_t data) {
+				offset -= region->base;
+				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				keyboard->keyboard_out &= ~(((uint16_t)0xFF) << (offset * 8));
+				keyboard->keyboard_out |= ((uint16_t)data) << (offset * 8);
+				keyboard->keyboard_out &= 0x83FF;
+				if (!offset)
+					keyboard->RecalculateKI();
+			}, emulator);
+		}
 
 		if (!real_hardware)
 		{
@@ -598,7 +610,7 @@ namespace casioemu
 	{
 		uint8_t keyboard_out_ghosted = 0;
 		uint8_t ki_pulled_up = 0;
-		for (size_t ix = 0; ix != 7; ++ix)
+		for (size_t ix = 0; ix != 8; ++ix)
 			if (keyboard_out & ~keyboard_out_mask & (1 << ix))
 				keyboard_out_ghosted |= keyboard_ghost[ix];
 

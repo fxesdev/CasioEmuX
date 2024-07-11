@@ -31,11 +31,18 @@ void gui_loop(){
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
     
-    static MemoryEditor mem_edit;
+    static MemoryEditor mem_edit, mem_edit_2, mem_edit_3, mem_edit_4;
     if(n_ram_buffer!=nullptr&&me_mmu!=nullptr){
         //std::cout<<"renderhex!";
-        int n_ram_base = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0xD000 : 0x9000;
-        mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, 0x10000 - n_ram_base, n_ram_base);
+        if(m_emu->hardware_id == casioemu::HW_FX_5800P) {
+            mem_edit.DrawWindow(me_mmu,"MemoryEditor_RAM", n_ram_buffer, 0x0E00, 0x8000);
+            mem_edit_2.DrawWindow(me_mmu,"MemoryEditor_SFR", n_ram_buffer, 0x1000, 0xF000);
+            mem_edit_3.DrawWindow(me_mmu,"MemoryEditor_FLASH_1", n_ram_buffer, 0x8000, 0x40000);
+            mem_edit_4.DrawWindow(me_mmu,"MemoryEditor_FLASH_2", n_ram_buffer, 0x80000, 0x80000);
+        } else {
+            int n_ram_base = m_emu->hardware_id == casioemu::HW_ES_PLUS ? 0x8000 : m_emu->hardware_id == casioemu::HW_CLASSWIZ ? 0xD000 : 0x9000;
+            mem_edit.DrawWindow(me_mmu,"Memory Editor", n_ram_buffer, 0x10000 - n_ram_base, n_ram_base);
+        }
     }
     code_viewer->DrawWindow();
     

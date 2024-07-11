@@ -491,6 +491,7 @@ namespace casioemu
 		switch (emulator.hardware_id)
 		{
 		case HW_ES_PLUS:
+		case HW_FX_5800P:
 			return new Screen<HW_ES_PLUS>(emulator);
 
 		case HW_CLASSWIZ:
