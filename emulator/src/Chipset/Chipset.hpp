@@ -6,6 +6,7 @@
 
 #include "../Peripheral/IOPorts.hpp"
 #include "../Peripheral/ExternalInterrupts.hpp"
+#include "../Peripheral/Flash.hpp"
 
 #include <string>
 #include <vector>
@@ -86,12 +87,16 @@ namespace casioemu
 		MMU &mmu;
 		std::vector<unsigned char> rom_data;
 
+		Flash* flash;
+
 		InterruptSource* MaskableInterrupts;
 		size_t EffectiveMICount;
 
 		//Reserve these pointers to make it easy for other peripherals to input to pins.
 		IOPorts* ioport;
 		ExternalInterrupts* EXIhandle;
+
+		bool HWRemap;
 
 		bool WDT_enabled = false;
 

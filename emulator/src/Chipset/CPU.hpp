@@ -140,6 +140,8 @@ namespace casioemu
 
 		uint8_t dsr_mask;
 
+		bool cpu_run_stat;
+		
 		bool real_hardware;
 
 		void SetMemoryModel(MemoryModel memory_model);

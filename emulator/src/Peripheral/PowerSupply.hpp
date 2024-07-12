@@ -9,6 +9,8 @@ namespace casioemu {
         MMURegion region_BLDCON0, region_BLDCON1, region_BLDCON2, region_SPIndicator;
         uint8_t threshold, data_BLDCON2, data_SPIndicator;
         bool BLDMode, BLDFlag, BLDControl;
+
+        MMURegion region_5800P_BLD;
         
         bool isTestRoutineRunning;
         size_t TestTimer;

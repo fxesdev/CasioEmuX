@@ -74,6 +74,7 @@ namespace casioemu
 		int lua_model_ref, lua_pre_tick_ref, lua_post_tick_ref;
 		HardwareId hardware_id;
 		std::map<std::string, std::string> &argv_map;
+		bool realistic_simulation;
 
 	private:
 		/**

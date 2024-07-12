@@ -172,34 +172,45 @@ namespace casioemu
 		if (offset & 1)
 			PANIC("offset has LSB set\n");
 
-		if(offset < emulator.chipset.rom_data.size())
-			return (((uint16_t)emulator.chipset.rom_data[offset + 1]) << 8) | emulator.chipset.rom_data[offset];
-		
-		if(real_hardware)
-			return 0xFFFF;
-		else
+		uint8_t segment_index = offset >> 16;
+		uint16_t segment_offset = offset & 0xFFFF;
+
+		switch (emulator.hardware_id) {
+		case HW_ES_PLUS:
+			offset &= 0x1FFFE;
+			if (offset < emulator.chipset.rom_data.size())
+				return (((uint16_t)emulator.chipset.rom_data[offset + 1]) << 8) | emulator.chipset.rom_data[offset];
+			else
+				return 0;
+		case HW_CLASSWIZ:
+			if (emulator.chipset.SegmentAccess && segment_index == 5)
+				segment_index = 0;
+			if (segment_index < 4) {
+				if (emulator.chipset.HWRemap)
+					return (segment_index == 0 && segment_offset < 0x200) ? emulator.chipset.flash->ReadWord(0, segment_offset + 0xFE00) : emulator.chipset.flash->ReadWord(segment_index, segment_offset);
+				else
+					return (segment_index == 0 && segment_offset >= 0xFE00) ? 0xFFFF : emulator.chipset.flash->ReadWord(segment_index, segment_offset);
+			}
 			return 0;
-		// size_t segment_index = offset >> 16;
-		// size_t segment_offset = offset & 0xFFFF;
-
-		// if (!segment_index)
-		// 	return (((uint16_t)emulator.chipset.rom_data[segment_offset + 1]) << 8) | emulator.chipset.rom_data[segment_offset];
-
-		// MemoryByte *segment = segment_dispatch[segment_index];
-		// if (!segment)
-		// {
-		// 	emulator.HandleMemoryError();
-		// 	return 0;
-		// }
-
-		// MMURegion *region = segment[segment_offset].region;
-		// if (!region)
-		// {
-		// 	emulator.HandleMemoryError();
-		// 	return 0;
-		// }
-
-		// return (((uint16_t)region->read(region, offset + 1)) << 8) | region->read(region, offset);
+		case HW_CLASSWIZ_II:
+			if (segment_index == 8)
+				return emulator.chipset.flash->ReadWord(0, segment_offset);
+			segment_index &= 7;
+			if (segment_index == 6 || (segment_index == 7 && segment_offset >= 0x2000))
+				return 0xFFFF;
+			if (emulator.chipset.HWRemap)
+				return (segment_index == 0 && segment_offset < 0x200) ? emulator.chipset.flash->ReadWord(0, segment_offset + 0xFE00) : emulator.chipset.flash->ReadWord(segment_index, segment_offset);
+			else
+				return (segment_index == 0 && segment_offset >= 0xFE00) ? 0xFFFF : emulator.chipset.flash->ReadWord(segment_index, segment_offset);
+		case HW_FX_5800P:
+			if(segment_index < 2)
+				return (((uint16_t)emulator.chipset.rom_data[offset + 1]) << 8) | emulator.chipset.rom_data[offset];
+			if (segment_index >= 8)
+				return emulator.chipset.flash->ReadWord(segment_index & 7, segment_offset);
+			return 0xFFFF;
+		default:
+			PANIC("Unknown hardware id!");
+		}
 	}
 
 	uint8_t MMU::ReadData(size_t offset, bool softwareRead)
@@ -207,6 +218,8 @@ namespace casioemu
 		if (offset >= (1 << 24))
 			PANIC("offset doesn't fit 24 bits\n");
 
+		//now we find out DSR is also masked with 0x1F in classwiz ii
+		//yet not clear about exact behavior of the cpu on accessing segment 10 to 1F
 		/*
 		things about accessing unmapped segment is actually far more complex on real hardware;
 		the result seems to be also affected by the next instruction,
@@ -233,11 +246,6 @@ namespace casioemu
 		
 		size_t segment_index = offset >> 16;
 		size_t segment_offset = offset & 0xFFFF;
-
-		if(emulator.hardware_id == HW_CLASSWIZ && real_hardware) {
-			if(segment_index > 3 && (!emulator.chipset.SegmentAccess))
-				return 0;
-		}
 
 		MemoryByte *segment = segment_dispatch[segment_index];
 		if (!segment)
@@ -311,7 +319,7 @@ namespace casioemu
 		size_t segment_index = offset >> 16;
 		if(segment_index < 0x10)
 			return offset;
-		if(segment_index == 0xF0 || segment_index == 0x98)
+		if(segment_index == 0x10 || segment_index == 0x18)
 			return 0x1000001;
 		if((segment_index & 0x07) > 5) {
 			if(offset & 0x02 || !(offset & 0xFF)) {

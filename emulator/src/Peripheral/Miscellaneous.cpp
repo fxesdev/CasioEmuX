@@ -62,6 +62,7 @@ namespace casioemu
 	}
 
 	void Miscellaneous::Reset() {
-		
+		if(emulator.hardware_id == HW_FX_5800P)
+			emulator.chipset.InputToPort(0, 3, true);
 	}
 }

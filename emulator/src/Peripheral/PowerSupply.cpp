@@ -47,6 +47,12 @@ namespace casioemu {
             powersupply->data_SPIndicator = (data & 0x0F);
         }, emulator);
 
+        if(emulator.hardware_id == HW_FX_5800P) {
+            region_5800P_BLD.Setup(0x100000, 1, "PowerSupply/Fx5800P_BLD", &emulator.BatteryVoltage, [](MMURegion* region, size_t) {
+                return (uint8_t)(*(float*)region->userdata >= 1.0f ? 1 : 0);
+            }, MMURegion::IgnoreWrite, emulator);
+        }
+
         *(PowerSupply **)lua_newuserdata(emulator.lua_state, sizeof(PowerSupply *)) = this;
         lua_newtable(emulator.lua_state);
         lua_pushcfunction(emulator.lua_state, [](lua_State *lua_state) {

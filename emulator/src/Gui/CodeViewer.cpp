@@ -17,42 +17,44 @@
 #include <thread>
 casioemu::Emulator* m_emu = nullptr;
 CodeViewer::CodeViewer(std::string path) {
-	src_path = path;
-	std::thread t1([this]() {
-		std::ifstream f(src_path, std::ios::in);
-		if (!f.is_open()) {
-			PANIC("\nFail to open disassembly code src: %s\n", src_path.c_str());
-		}
-		casioemu::logger::Info("Start to read code src ...\n");
-		char buf[200]{ 0 };
-		char adr[6]{ 0 };
-		while (!f.eof()) {
-			f.getline(buf, 200);
-			// 1sf, extract segment number
-			uint8_t seg = buf[1] - '0';
-			uint8_t len = strlen(buf);
-			if (!len)
-				break;
-			if (len > max_col)
-				max_col = len;
-			memcpy(adr, buf + 2, 4);
-			// casioemu::logger::Info("[%s %d %d]\n",adr,seg,len);
-			uint16_t offset = std::stoi(adr, 0, 16);
-			CodeElem e;
-			e.offset = offset;
-			e.segment = seg;
-			memset(e.srcbuf, 0, 40);
-			memcpy(e.srcbuf, buf + 28, len - 28);
-			codes.push_back(e);
-			memset(buf, 0, 200);
-			memset(adr, 0, 6);
-		}
-		f.close();
-		casioemu::logger::Info("Read src codes over!\n");
-		max_row = codes.size();
-		is_loaded = true;
-	});
-	t1.join();
+    src_path = path;
+    std::thread t1([this]() {
+        std::ifstream f(src_path, std::ios::in);
+        if (!f.is_open()) {
+            max_row = 0;
+            is_loaded = true;
+            return;
+        }
+        casioemu::logger::Info("Start to read code src ...\n");
+        char buf[200]{0};
+        char adr[6]{0};
+        while (!f.eof()) {
+            f.getline(buf, 200);
+            // 1sf, extract segment number
+            uint8_t seg = buf[1] <= '9' ? buf[1] - '0' : buf[1] - 'A' + 10;
+            uint8_t len = strlen(buf);
+            if (!len)
+                break;
+            if (len > max_col)
+                max_col = len;
+            memcpy(adr, buf + 2, 4);
+            // casioemu::logger::Info("[%s %d %d]\n",adr,seg,len);
+            uint16_t offset = std::stoi(adr, 0, 16);
+            CodeElem e;
+            e.offset = offset;
+            e.segment = seg;
+            memset(e.srcbuf, 0, 40);
+            memcpy(e.srcbuf, buf + 28, len - 28);
+            codes.push_back(e);
+            memset(buf, 0, 200);
+            memset(adr, 0, 6);
+        }
+        f.close();
+        casioemu::logger::Info("Read src codes over!\n");
+        max_row = codes.size();
+        is_loaded = true;
+    });
+    t1.join();
 }
 bool elem_cmp(const CodeElem& a, const CodeElem& b) {
 	return a.segment == b.segment && a.offset < b.offset;
