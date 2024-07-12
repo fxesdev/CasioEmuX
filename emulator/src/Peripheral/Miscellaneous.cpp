@@ -37,7 +37,7 @@ namespace casioemu
 		switch (emulator.hardware_id)
 		{
 		case HW_ES_PLUS:
-		case HW_5800P:
+		case HW_FX_5800P:
 			n_byte = 1;
 			break;
 		case HW_CLASSWIZ:
