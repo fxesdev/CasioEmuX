@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "imgui/imgui.h"
 #include "hex.hpp"
 class AppMemoryView {
 	MemoryEditor mem_edit;

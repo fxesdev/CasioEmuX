@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../Emulator.hpp"
+#include "imgui/imgui.h"
 #include "hex.hpp"
 #include <cstdint>
 
