@@ -10,7 +10,7 @@
 @set files=src\casioemu.cpp src\Emulator.cpp src\Logger.cpp
 @set files=%files% src\Chipset\CPU.cpp src\Chipset\CPUPushPop.cpp src\Chipset\MMURegion.cpp src\Chipset\CPUControl.cpp src\Chipset\CPUArithmetic.cpp src\Chipset\CPULoadStore.cpp src\Chipset\Chipset.cpp src\Chipset\MMU.cpp src\Chipset\InterruptSource.cpp
 @set files=%files% src\Peripheral\BatteryBackedRAM.cpp src\Peripheral\Peripheral.cpp src\Peripheral\Keyboard.cpp src\Peripheral\Screen.cpp src\Peripheral\Timer.cpp src\Peripheral\StandbyControl.cpp src\Peripheral\ROMWindow.cpp src\Peripheral\Miscellaneous.cpp
-@set files=%files% src\Peripheral\BCDCalc.cpp src\Peripheral\PowerSupply.cpp src\Peripheral\TimerBaseCounter.cpp src\Peripheral\RealTimeClock.cpp src\Peripheral\WatchdogTimer.cpp src\Peripheral\ExternalInterrupts.cpp src\Peripheral\IOPorts.cpp
+@set files=%files% src\Peripheral\BCDCalc.cpp src\Peripheral\PowerSupply.cpp src\Peripheral\TimerBaseCounter.cpp src\Peripheral\RealTimeClock.cpp src\Peripheral\WatchdogTimer.cpp src\Peripheral\ExternalInterrupts.cpp src\Peripheral\IOPorts.cpp src\Peripheral\Flash.cpp
 @set files=%files% src\Gui\CodeViewer.cpp src\Gui\Command.cpp src\Data\ModelInfo.cpp
 @set files=%files% src\Gui\imgui\imgui_impl_sdl2.cpp src\Gui\imgui\imgui_impl_sdlrenderer2.cpp src\Gui\imgui\imgui.cpp src\Gui\imgui\imgui_widgets.cpp src\Gui\imgui\imgui_tables.cpp src\Gui\imgui\imgui_draw.cpp
 
