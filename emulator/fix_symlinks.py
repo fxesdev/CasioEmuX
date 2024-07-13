@@ -11,7 +11,7 @@ def fix_file(file):
 	print(f'Fixed {file}')
 
 if __name__ == '__main__':
-	if os.listdir('../imgui') and os.listdir('../imgui_club'):
+	if os.listdir('../imgui'):
 		for file in os.listdir('src/Gui/imgui'): fix_file(f'src/Gui/imgui/{file}')
 		print('All done!')
 	else:
