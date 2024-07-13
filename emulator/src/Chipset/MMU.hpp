@@ -35,6 +35,7 @@ namespace casioemu
 		void GenerateSegmentDispatch(size_t segment_index);
 		uint16_t ReadCode(size_t offset);
 		uint8_t ReadData(size_t offset, bool softwareRead = true);
+		uint16_t ReadWord(size_t offset);
 		void WriteData(size_t offset, uint8_t data, bool softwareWrite = true);
 		size_t getRealOffset(size_t offset);
 

@@ -5,6 +5,7 @@
 #include "../Chipset/MMU.hpp"
 #include "../Emulator.hpp"
 #include "../Chipset/Chipset.hpp"
+#include "../Chipset/CPU.hpp"
 
 #include <string>
 
@@ -35,13 +36,21 @@ namespace casioemu
 			}, write_function, emulator);*/
 
 		//Redirect ROM window access to ReadCode
-		region.Setup(region_base, size, description, &emulator.chipset.mmu, [](MMURegion* region, size_t address) {
-			uint16_t data = ((MMU*)region->userdata)->ReadCode(address & 0xFFFFE);
+		region.Setup(region_base, size, description, &emulator, [](MMURegion* region, size_t address) {
+			Emulator* emu = (Emulator*)region->userdata;
+			uint16_t data = emu->chipset.mmu.ReadCode(address & 0xFFFFE);
+			emu->chipset.cpu.cycle_counter++;
 			if (address & 1)
 				return (uint8_t)((data >> 8) & 0xFF);
 			else
 				return (uint8_t)(data & 0xFF);
 		}, write_function, emulator);
+
+		region.SetupWordAccess([](MMURegion* region, size_t address) {
+			Emulator* emu = (Emulator*)region->userdata;
+			emu->chipset.cpu.cycle_counter++;
+			return emu->chipset.mmu.ReadCode(address);
+		});
 	}
 
 	void ROMWindow::Initialise()

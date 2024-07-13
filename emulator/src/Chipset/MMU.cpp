@@ -258,6 +258,78 @@ namespace casioemu
 		return region->read(region, offset);
 	}
 
+	/**
+	* See section 3.3 in the nX-U16 manual for reference.
+	* This function provides convenience for calculating ROM window access wait cycles and handling some special addresses.
+	* In some cases, reading an address by word might return diferrent result from reading by byte.For example, F03Dh will always return 0 if read by word.
+	* In nX-U16/100 core, load instructions using EA/EA+ or ERn addressing and coprocessor data transfer instructions using EA/EA+ addressing might read data by word.
+	* Pop instructions might also read data by word.
+	*/
+	uint16_t MMU::ReadWord(size_t offset) {
+		if (offset >= (1 << 24))
+			PANIC("offset doesn't fit 24 bits\n");
+
+		offset &= 0xFFFFFE;
+
+		size_t segment_index = offset >> 16;
+		size_t segment_offset = offset & 0xFFFE;
+
+		MemoryByte* segment = segment_dispatch[segment_index];
+		if (!segment)
+		{
+			//logger::Info("read from offset %04zX of unmapped segment %02zX\n", segment_offset, segment_index);
+			emulator.HandleMemoryError();
+			return 0;
+		}
+
+		MemoryByte& low_byte = segment[segment_offset];
+		MemoryByte& high_byte = segment[segment_offset + 1];
+
+		if (low_byte.on_read != LUA_REFNIL)
+		{
+			lua_geti(emulator.lua_state, LUA_REGISTRYINDEX, low_byte.on_read);
+			if (lua_pcall(emulator.lua_state, 0, 0, 0) != LUA_OK)
+			{
+				lua_pop(emulator.lua_state, 1);
+			}
+		}
+		if (high_byte.on_read != LUA_REFNIL)
+		{
+			lua_geti(emulator.lua_state, LUA_REGISTRYINDEX, high_byte.on_read);
+			if (lua_pcall(emulator.lua_state, 0, 0, 0) != LUA_OK)
+			{
+				lua_pop(emulator.lua_state, 1);
+			}
+		}
+
+		MMURegion* region1 = low_byte.region;
+		MMURegion* region2 = high_byte.region;
+
+		if (!region1)
+		{
+			if (!region2)
+				return 0;
+
+			if (region2->word_access)
+				return region2->word_read(region2, offset);
+			else
+				return (uint16_t)region2->read(region2, offset + 1) << 8;
+		}
+
+		if (region1->word_access) {
+			return region1->word_read(region1, offset);
+		} else {
+			uint8_t low_byte_data = region1->read(region1, offset);
+			if (!region2)
+				return (uint16_t)low_byte_data;
+
+			if (region2->word_access)
+				return region2->word_read(region2, offset) | low_byte_data;
+			else
+				return ((uint16_t)region2->read(region2, offset + 1) << 8) | low_byte_data;
+		}
+	}
+
 	void MMU::WriteData(size_t offset, uint8_t data, bool softwareWrite)
 	{
 		if (offset >= (1 << 24))

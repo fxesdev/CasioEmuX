@@ -13,14 +13,17 @@ namespace casioemu
 	struct MMURegion
 	{
 		typedef uint8_t (*ReadFunction)(MMURegion *, size_t);
+		typedef uint16_t (*WordReadFunction)(MMURegion*, size_t);
 		typedef void (*WriteFunction)(MMURegion *, size_t, uint8_t);
 
 		size_t base, size;
 		std::string description;
 		void *userdata;
 		ReadFunction read;
+		WordReadFunction word_read;
 		WriteFunction write;
 		bool setup_done;
+		bool word_access;
 		Emulator *emulator;
 
 		MMURegion();
@@ -34,6 +37,13 @@ namespace casioemu
 		~MMURegion();
 		void Setup(size_t base, size_t size, std::string description, void *userdata, ReadFunction read, WriteFunction write, Emulator &emulator);
 		void Kill();
+
+		/**
+		*Setup the region for byte access first.The base and size remains the same.
+		*Note: you can set a word access function for a byte-sized MMURegion. If the lower byte and the higher byte both have word-access functions, the lower byte one is used.
+		*/
+		void SetupWordAccess(WordReadFunction read);
+		void RemoveWordAccess();
 
 		template<uint8_t read_value>
 		static uint8_t IgnoreRead(MMURegion *, size_t)
