@@ -17,6 +17,7 @@ namespace casioemu
 {
 	class Emulator;
 	class CPU;
+	class Coprocessor;
 	class MMU;
 	class Peripheral;
 
@@ -84,6 +85,7 @@ namespace casioemu
 
 		Emulator &emulator;
 		CPU &cpu;
+		Coprocessor& coprocessor;
 		MMU &mmu;
 		std::vector<unsigned char> rom_data;
 
@@ -159,6 +161,7 @@ namespace casioemu
 		void SetInterruptPendingSFR(size_t index, bool val);
 		bool GetInterruptPendingSFR(size_t index);
 		void HandleInterrupts();
+		void InstCallBack();
 		void InputToPort(int, int, bool);
 		void RemovePortInput(int, int);
 

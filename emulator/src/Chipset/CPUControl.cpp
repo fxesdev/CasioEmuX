@@ -2,6 +2,7 @@
 
 #include "../Emulator.hpp"
 #include "Chipset.hpp"
+#include "Coprocessor.hpp"
 #include "MMU.hpp"
 
 #include "../Gui/ui.hpp"
@@ -22,17 +23,17 @@ namespace casioemu
 		switch (impl_hint >> 8)
 		{
 		case 1:
-			reg_ecsr[PSW_backup[0] & PSW_ELEVEL] = impl_operands[1].value;
+			reg_ecsr[PSW_backup[1] & PSW_ELEVEL] = impl_operands[1].value;
 			break;
 		case 2:
-			reg_elr[PSW_backup[0] & PSW_ELEVEL] = impl_operands[1].value;
+			reg_elr[PSW_backup[1] & PSW_ELEVEL] = impl_operands[1].value;
 			break;
 		case 3:
-			if (PSW_backup[0] & PSW_ELEVEL)
-				reg_epsw[PSW_backup[0] & PSW_ELEVEL] = impl_operands[1].value;
+			if (PSW_backup[1] & PSW_ELEVEL)
+				reg_epsw[PSW_backup[1] & PSW_ELEVEL] = impl_operands[1].value;
 			break;
 		case 4:
-			impl_operands[0].value = reg_elr[PSW_backup[0] & PSW_ELEVEL];
+			impl_operands[0].value = reg_elr[PSW_backup[1] & PSW_ELEVEL];
 			break;
 		case 5:
 			impl_operands[0].value = reg_sp;
@@ -42,11 +43,11 @@ namespace casioemu
 			reg_psw = impl_operands[1].value;
 			break;
 		case 8:
-			impl_operands[0].value = reg_ecsr[PSW_backup[0] & PSW_ELEVEL];
+			impl_operands[0].value = reg_ecsr[PSW_backup[1] & PSW_ELEVEL];
 			break;
 		case 9:
-			if (PSW_backup[0] & PSW_ELEVEL) {
-				impl_operands[0].value = reg_epsw[PSW_backup[0] & PSW_ELEVEL];
+			if (PSW_backup[1] & PSW_ELEVEL) {
+				impl_operands[0].value = reg_epsw[PSW_backup[1] & PSW_ELEVEL];
 			} else {
 				if(cpu_model == CM_NX_U16) {
 					impl_operands[0].value = 0xFF;
@@ -83,7 +84,7 @@ namespace casioemu
 		if (impl_hint & H_ST)
 			reg_r[op0_index] = reg_cr[op1_index];
 		else
-			reg_cr[op0_index] = reg_r[op1_index];
+			emulator.chipset.coprocessor.SetCR(op0_index, (uint8_t)reg_r[op1_index].raw);
 	}
 
 	void CPU::OP_CR_EA()
@@ -99,16 +100,16 @@ namespace casioemu
 		}
 		else
 		{
-			if(cpu_model == CM_NX_U16 && register_size > 1)
+			if (cpu_model == CM_NX_U16 && register_size > 1)
 				for (size_t ix = 0; ix < register_size; ix += 2)
 				{
 					uint16_t data = emulator.chipset.mmu.ReadWord((((size_t)reg_dsr) << 16) | (uint16_t)(reg_ea + ix));
-					reg_cr[op0_index + ix] = data & 0xFF;
-					reg_cr[op0_index + ix + 1] = (data >> 8) & 0xFF;
+					emulator.chipset.coprocessor.SetCR(op0_index + ix, uint8_t(data & 0xFF));
+					emulator.chipset.coprocessor.SetCR(op0_index + ix + 1, uint8_t((data >> 8) & 0xFF));
 				}
 			else
 				for (size_t ix = 0; ix != register_size; ++ix)
-					reg_cr[op0_index + ix] = emulator.chipset.mmu.ReadData((((size_t)reg_dsr) << 16) | (uint16_t)(reg_ea + ix));
+					emulator.chipset.coprocessor.SetCR(op0_index + ix, emulator.chipset.mmu.ReadData((((size_t)reg_dsr) << 16) | (uint16_t)(reg_ea + ix)));
 		}
 
 		if (impl_hint & H_IA)
@@ -228,9 +229,9 @@ namespace casioemu
 
 	void CPU::OP_RTI()
 	{
-		reg_csr = reg_ecsr[PSW_backup[0] & PSW_ELEVEL];
-		reg_pc = reg_elr[PSW_backup[0] & PSW_ELEVEL];
-		reg_psw = reg_epsw[PSW_backup[0] & PSW_ELEVEL];
+		reg_csr = reg_ecsr[PSW_backup[1] & PSW_ELEVEL];
+		reg_pc = reg_elr[PSW_backup[1] & PSW_ELEVEL];
+		reg_psw = reg_epsw[PSW_backup[1] & PSW_ELEVEL];
 	}
 }
 

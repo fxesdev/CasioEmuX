@@ -28,14 +28,14 @@ namespace casioemu
 			if (memory_model == MM_LARGE)
 			{
 				cycle_counter += cpu_model == CM_NX_U8 ? 2 : 1;
-				Push16(reg_ecsr[PSW_backup[0] & PSW_ELEVEL]);
+				Push16(reg_ecsr[PSW_backup[1] & PSW_ELEVEL]);
 			}
-			Push16(reg_elr[PSW_backup[0] & PSW_ELEVEL]);
+			Push16(reg_elr[PSW_backup[1] & PSW_ELEVEL]);
 		}
 		if (impl_operands[1].value & 4)
 		{
 			cycle_counter += cpu_model == CM_NX_U8 ? 2 : 1;
-			Push16(reg_epsw[PSW_backup[0] & PSW_ELEVEL]);
+			Push16(reg_epsw[PSW_backup[1] & PSW_ELEVEL]);
 		}
 		if (impl_operands[1].value & 8)
 		{

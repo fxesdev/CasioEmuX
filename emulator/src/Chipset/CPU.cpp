@@ -2,6 +2,7 @@
 
 #include "../Emulator.hpp"
 #include "Chipset.hpp"
+#include "Coprocessor.hpp"
 #include "MMU.hpp"
 #include "../Logger.hpp"
 #include "../Gui/ui.hpp"
@@ -383,99 +384,101 @@ namespace casioemu
 		if (!cpu_run_stat)
 			return;
 
+		if (cycle_counter <= 0) {
+			cycle_counter = 0;
+
+			/**
+			 * `reg_dsr` only affects the current instruction. The old DSR is stored in
+			 * `impl_last_dsr` and is recalled every time a DSR instruction is encountered
+			 * that activates DSR addressing without actually changing DSR.
+			 */
+			reg_dsr = 0;
+			DSR_prefix_flag = false;
+
+			while (1)
+			{
+				impl_opcode = Fetch();
+				OpcodeSource* handler = opcode_dispatch[impl_opcode];
+
+				if (!handler) {
+					//Treat unrecognized instructions as nop
+					cycle_counter++;
+					break;
+				}
+
+				cycle_counter += cpu_model == CM_NX_U8 ? handler->exec_cycles_U8 : handler->exec_cycles_U16;
+				if (inc_ea_flag && handler->inc_ea_delay)
+					cycle_counter++;
+
+				inc_ea_flag = handler->hint & H_IA;
+
+				impl_long_imm = 0;
+				if (handler->hint & H_TI)
+					impl_long_imm = Fetch();
+
+				for (size_t ix = 0; ix != sizeof(impl_operands) / sizeof(impl_operands[0]); ++ix)
+				{
+					impl_operands[ix].value = (impl_opcode >> handler->operands[ix].shift) & handler->operands[ix].mask;
+					impl_operands[ix].register_index = impl_operands[ix].value;
+					impl_operands[ix].register_size = handler->operands[ix].register_size;
+
+					if (impl_operands[ix].register_size)
+					{
+						impl_operands[ix].value = 0;
+						for (size_t bx = 0; bx != impl_operands[ix].register_size; ++bx)
+							impl_operands[ix].value |= (uint64_t)(reg_r[impl_operands[ix].register_index + bx]) << (bx * 8);
+					}
+				}
+				impl_hint = handler->hint;
+
+				impl_flags_changed = 0;
+				impl_flags_in = reg_psw;
+				/**
+				 * Yes, Z is always set to 1. While `impl_flags_changed` may not have
+				 * PSW_Z set, `impl_flags_out` does as most of the time Z is calculated
+				 * by one or more calls to `ZSCheck`. `ZSCheck` only changes Z if the
+				 * value it checks is non-zero, otherwise it leaves it alone.
+				 */
+				impl_flags_out = PSW_Z;
+				(this->*(handler->handler_function))();
+				if (code_viewer) {
+					if ((code_viewer->debug_flags & DEBUG_BREAKPOINT) && code_viewer->TryTrigBP(reg_csr, reg_pc)) {
+						emulator.SetPaused(true);
+					}
+					else if ((code_viewer->debug_flags) & DEBUG_STEP && code_viewer->TryTrigBP(reg_csr, reg_pc, false)) {
+						emulator.SetPaused(true);
+					}
+				}
+				reg_psw &= ~impl_flags_changed;
+				reg_psw |= impl_flags_out & impl_flags_changed;
+
+				if (handler->hint & H_WB && impl_operands[0].register_size)
+					for (size_t bx = 0; bx != impl_operands[0].register_size; ++bx)
+						reg_r[impl_operands[0].register_index + bx] = (uint8_t)(impl_operands[0].value >> (bx * 8));
+
+				if (!(handler->hint & H_DS))
+					break;
+
+			}
+
+			InterruptBlocked = false;
+		}
+
 		/**
 		* See instruction description for `MOV PSW, obj` in the nX-U8/U16 mabual.
-		* Changes to ELEVEL takes place after 1 clock cycle.
+		* Changes to ELEVEL takes place after 2 clock cycle.
 		* Changes to MIE bit takes place after 3 clock cycles.
 		*/
-		if (--cycle_counter > 0) {
-			PSW_backup[2] = PSW_backup[1];
-			PSW_backup[1] = PSW_backup[0];
-			PSW_backup[0] = (uint8_t)(reg_psw.raw & 0xFF);
-			return;
-		}
-
-		cycle_counter = 0;
-
-		/**
-		 * `reg_dsr` only affects the current instruction. The old DSR is stored in
-		 * `impl_last_dsr` and is recalled every time a DSR instruction is encountered
-		 * that activates DSR addressing without actually changing DSR.
-		 */
-		reg_dsr	= 0;
-		DSR_prefix_flag = false;
-
-		while (1)
-		{
-			impl_opcode = Fetch();
-			OpcodeSource *handler = opcode_dispatch[impl_opcode];
-
-			if (!handler) {
-				//Treat unrecognized instructions as nop
-				cycle_counter++;
-				break;
-			}
-
-			cycle_counter += cpu_model == CM_NX_U8 ? handler->exec_cycles_U8 : handler->exec_cycles_U16;
-			if (inc_ea_flag && handler->inc_ea_delay)
-				cycle_counter++;
-
-			inc_ea_flag = handler->hint & H_IA;
-
-			impl_long_imm = 0;
-			if (handler->hint & H_TI)
-				impl_long_imm = Fetch();
-
-			for (size_t ix = 0; ix != sizeof(impl_operands) / sizeof(impl_operands[0]); ++ix)
-			{
-				impl_operands[ix].value = (impl_opcode >> handler->operands[ix].shift) & handler->operands[ix].mask;
-				impl_operands[ix].register_index = impl_operands[ix].value;
-				impl_operands[ix].register_size = handler->operands[ix].register_size;
-
-				if (impl_operands[ix].register_size)
-				{
-					impl_operands[ix].value = 0;
-					for (size_t bx = 0; bx != impl_operands[ix].register_size; ++bx)
-						impl_operands[ix].value |= (uint64_t)(reg_r[impl_operands[ix].register_index + bx]) << (bx * 8);
-				}
-			}
-			impl_hint = handler->hint;
-
-			impl_flags_changed = 0;
-			impl_flags_in = reg_psw;
-			/**
-			 * Yes, Z is always set to 1. While `impl_flags_changed` may not have
-			 * PSW_Z set, `impl_flags_out` does as most of the time Z is calculated
-			 * by one or more calls to `ZSCheck`. `ZSCheck` only changes Z if the
-			 * value it checks is non-zero, otherwise it leaves it alone.
-			 */
-			impl_flags_out = PSW_Z;
-			(this->*(handler->handler_function))();
-			if(code_viewer){
-				if((code_viewer->debug_flags & DEBUG_BREAKPOINT) && code_viewer->TryTrigBP(reg_csr, reg_pc)){
-					emulator.SetPaused(true);
-				}
-				else if((code_viewer->debug_flags)&DEBUG_STEP && code_viewer->TryTrigBP(reg_csr, reg_pc,false)){
-					emulator.SetPaused(true);
-				}
-			}
-			reg_psw &= ~impl_flags_changed;
-			reg_psw |= impl_flags_out & impl_flags_changed;
-
-			if (handler->hint & H_WB && impl_operands[0].register_size)
-				for (size_t bx = 0; bx != impl_operands[0].register_size; ++bx)
-					reg_r[impl_operands[0].register_index + bx] = (uint8_t)(impl_operands[0].value >> (bx * 8));
-
-			if (!(handler->hint & H_DS))
-				break;
-			
-		}
-
 		PSW_backup[2] = PSW_backup[1];
 		PSW_backup[1] = PSW_backup[0];
 		PSW_backup[0] = (uint8_t)(reg_psw.raw & 0xFF);
 
-		emulator.chipset.HandleInterrupts();
+		if (--cycle_counter <= 0) {
+			//This will treat the interrupt acceptance sequence as an instruction.
+			emulator.chipset.InstCallBack();
+			if (!InterruptBlocked)
+				emulator.chipset.HandleInterrupts();
+		}
 	}
 
 	void CPU::SetMemoryModel(MemoryModel _memory_model)
@@ -507,14 +510,15 @@ namespace casioemu
 			reg_elr[i] = 0;
 			reg_epsw[i] = 0;
 		}
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 16; i++)
 			reg_r[i] = 0;
-			reg_cr[i] = 0;
-		}
+
+		emulator.chipset.coprocessor.Reset();
 
 		cycle_counter = 1;
 		inc_ea_flag = false;
 		DSR_prefix_flag = false;
+		InterruptBlocked = false;
 		PSW_backup[0] = 0;
 		PSW_backup[1] = 0;
 		PSW_backup[2] = 0;
@@ -530,6 +534,7 @@ namespace casioemu
 		if (inc_ea_flag)
 			cycle_counter++;
 		inc_ea_flag = 0;
+		InterruptBlocked = true;
 
 		reg_epsw[exception_level].raw = reg_psw.raw;
 		reg_elr[exception_level].raw = reg_pc.raw;
@@ -550,7 +555,7 @@ namespace casioemu
 
 	size_t CPU::GetExceptionLevel()
 	{
-		return PSW_backup[0] & PSW_ELEVEL;
+		return reg_psw.raw & PSW_ELEVEL;
 	}
 
 	bool CPU::GetMasterInterruptEnable()

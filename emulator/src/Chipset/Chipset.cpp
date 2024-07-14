@@ -4,6 +4,7 @@
 #include "../Emulator.hpp"
 #include "../Logger.hpp"
 #include "CPU.hpp"
+#include "Coprocessor.hpp"
 #include "MMU.hpp"
 #include "InterruptSource.hpp"
 
@@ -32,7 +33,7 @@
 
 namespace casioemu
 {
-	Chipset::Chipset(Emulator &_emulator) : emulator(_emulator), cpu(*new CPU(emulator)), mmu(*new MMU(emulator))
+	Chipset::Chipset(Emulator &_emulator) : emulator(_emulator), cpu(*new CPU(emulator)), coprocessor(*new Coprocessor(emulator)), mmu(*new MMU(emulator))
 	{
 	}
 
@@ -570,6 +571,10 @@ namespace casioemu
 		}
 	}
 
+	void Chipset::InstCallBack() {
+
+	}
+
 	bool Chipset::GetRequireFrame()
 	{
 		return std::any_of(peripherals.begin(), peripherals.end(), [](Peripheral *peripheral){
@@ -652,6 +657,7 @@ namespace casioemu
 		//cpu always follows the high speed clock.
 		if (run_mode == RM_RUN && HSCLKTick) {
 			cpu.Next();
+			coprocessor.Tick();
 		}
 
 		LSCLKTick = false;

@@ -152,6 +152,12 @@ namespace casioemu
 		int cycle_counter;
 
 		bool cpu_run_stat;
+
+		/**
+		* See 1.6 in the nX-U8/U16 manual.
+		* The hardware masks all interrupts between the start of the interrupt acceptance cycle and the end of the first instruction in the interrupt handler.
+		*/
+		bool InterruptBlocked;
 		
 		bool real_hardware;
 
