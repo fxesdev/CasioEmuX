@@ -572,7 +572,7 @@ namespace casioemu
 	}
 
 	void Chipset::InstCallBack() {
-
+		coprocessor.Refresh();
 	}
 
 	bool Chipset::GetRequireFrame()

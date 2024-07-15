@@ -465,8 +465,8 @@ namespace casioemu
 		}
 
 		/**
-		* See instruction description for `MOV PSW, obj` in the nX-U8/U16 mabual.
-		* Changes to ELEVEL takes place after 2 clock cycle.
+		* See instruction description for `MOV PSW, obj` in the nX-U8/U16 manual.
+		* Changes to ELEVEL takes place after 2 clock cycles.
 		* Changes to MIE bit takes place after 3 clock cycles.
 		*/
 		PSW_backup[2] = PSW_backup[1];
