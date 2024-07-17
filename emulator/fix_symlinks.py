@@ -2,10 +2,12 @@ import os
 
 def fix_file(file):
 	if os.path.islink(file):
-		print(f'{file} already fixed, skipping')
-		return
-
-	with open(file) as f: filename = f.read()
+		if os.path.exists(file):
+			print(f'{file} already fixed, skipping')
+			return
+		else: filename =  os.readlink(file)
+	else:
+		with open(file) as f: filename = f.read()
 	os.remove(file)
 	os.symlink(os.getcwd() + '/../' + filename, file)
 	print(f'Fixed {file}')
