@@ -27,8 +27,8 @@ namespace casioemu
 			OFFSET, // bytes
 			ROW_SIZE_DISP; // bytes used to display
 
-		MMURegion region_buffer, region_buffer1, region_contrast, region_mode, region_range, region_select;
-		uint8_t *screen_buffer, *screen_buffer1, screen_contrast, screen_mode, screen_range, screen_select;
+		MMURegion region_buffer, region_buffer1, region_contrast, region_brightness, region_mode, region_range, region_select;
+		uint8_t *screen_buffer, *screen_buffer1, screen_contrast, screen_mode, screen_brightness, screen_range, screen_select;
 
 	    SDL_Renderer *renderer;
 	    SDL_Texture *interface_texture;
@@ -356,8 +356,14 @@ namespace casioemu
 			}
 		}
 
-		region_range.Setup(0xF030, 1, "Screen/Range", this, DefaultRead<uint8_t, 0x07, &Screen::screen_range>,
+		if (emulator.hardware_id == HW_CLASSWIZ || emulator.hardware_id == HW_CLASSWIZ_II) {
+			region_range.Setup(0xF030, 1, "Screen/Range", this, DefaultRead<uint8_t, 0x07 | 0b100000, &Screen::screen_range>,
+				SetRequireFrameWrite<uint8_t, 0x07 | 0b100000, &Screen::screen_range>, emulator);
+		}
+		else {
+			region_range.Setup(0xF030, 1, "Screen/Range", this, DefaultRead<uint8_t, 0x07, &Screen::screen_range>,
 				SetRequireFrameWrite<uint8_t, 0x07, &Screen::screen_range>, emulator);
+		}
 
 		region_mode.Setup(0xF031, 1, "Screen/Mode", this, DefaultRead<uint8_t, 0x07, &Screen::screen_mode>,
 				SetRequireFrameWrite<uint8_t, 0x07, &Screen::screen_mode>, emulator);
@@ -365,6 +371,8 @@ namespace casioemu
 		region_contrast.Setup(0xF032, 1, "Screen/Contrast", this, DefaultRead<uint8_t, 0x3F, &Screen::screen_contrast>,
 				SetRequireFrameWrite<uint8_t, 0x3F, &Screen::screen_contrast>, emulator);
 	}
+		region_brightness.Setup(0xF033, 1, "Screen/Brightness", this, DefaultRead<uint8_t, 0x07, &Screen::screen_brightness>,
+			SetRequireFrameWrite<uint8_t, 0x07, &Screen::screen_brightness>, emulator);
 
 	template<HardwareId hardware_id> void Screen<hardware_id>::Uninitialise()
 	{
@@ -411,6 +419,22 @@ namespace casioemu
 		default:
 			return;
 		}
+
+		if (screen_range & 0b100000)
+			return;
+		bool flip_screen_h = screen_mode & 0b1000;
+		bool flip_screen_v = !(screen_mode & 0b10000);
+		if (emulator.hardware_id == HW_CLASSWIZ || emulator.hardware_id == HW_CLASSWIZ_II) {
+		}
+		else {
+			flip_screen_v = flip_screen_v = 0;
+		}
+		int rng1 = (4 - (screen_range & 0x3));
+		ink_alpha_off *= (4 / rng1);
+		ink_alpha_on *= (4 / rng1);
+		ink_alpha_off = std::clamp(ink_alpha_off, 0, 255);
+		ink_alpha_on = std::clamp(ink_alpha_on, 0, 255);
+		int rng = rng1 * 8;
 
 		SDL_SetTextureColorMod(interface_texture, ink_colour.r, ink_colour.g, ink_colour.b);
 

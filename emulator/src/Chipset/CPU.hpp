@@ -84,6 +84,15 @@ namespace casioemu
 		size_t impl_hint;
 		uint16_t impl_csr_mask;
 
+		//Instructions using [EA+] addressing might introduce an extra wait cycle.
+		uint8_t inc_ea_flag;
+
+		//According to section 3.3 in nX-U16 manual, DSR prefix might cost 2 cycles under certain situations.
+		bool DSR_prefix_flag;
+
+		//change to MIE bit takes place after 3 cycles.
+		uint8_t PSW_backup[3];
+
 		size_t fetch_addition;
 
 		void SetupOpcodeDispatch();
@@ -140,7 +149,15 @@ namespace casioemu
 
 		uint8_t dsr_mask;
 
+		int cycle_counter;
+
 		bool cpu_run_stat;
+
+		/**
+		* See 1.6 in the nX-U8/U16 manual.
+		* The hardware masks all interrupts between the start of the interrupt acceptance cycle and the end of the first instruction in the interrupt handler.
+		*/
+		bool InterruptBlocked;
 		
 		bool real_hardware;
 
@@ -197,6 +214,11 @@ namespace casioemu
 				size_t register_size;
 				uint16_t mask, shift;
 			} operands[2];
+			int exec_cycles_U8;
+			int exec_cycles_U16;
+
+			//[EA+] addressing might introduce a wait cycle. See section 3.3 in the nX-U8/U16 manual.
+			bool inc_ea_delay;
 		};
 		static OpcodeSource opcode_sources[];
 		OpcodeSource **opcode_dispatch;
@@ -242,7 +264,7 @@ namespace casioemu
 		void OP_LS_BP();
 		void OP_LS_FP();
 		void OP_LS_I();
-		void LoadStore(uint16_t offset, size_t length);
+		void LoadStore(uint16_t offset, size_t length, bool access_by_word);
 		// * Control Register Access Instructions
 		void OP_ADDSP();
 		void OP_CTRL();

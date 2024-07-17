@@ -17,6 +17,7 @@ namespace casioemu
 {
 	class Emulator;
 	class CPU;
+	class Coprocessor;
 	class MMU;
 	class Peripheral;
 
@@ -72,7 +73,7 @@ namespace casioemu
 		MMURegion region_FCON, region_LTBR, region_HTBR, region_LTBADJ;
 		int LSCLKFreq;
 
-		long long LSCLKTickCounter, HSCLKTickCounter, HSCLKTimeCounter, SYSCLKTickCounter, LSCLKTimeCounter, LSCLKThresh;
+		long long LSCLKTickCounter, HSCLKTickCounter, HSCLKTimeCounter, LSCLKTimeCounter, LSCLKThresh;
 		int LSCLKFreqAddition;
 
 		bool real_hardware;
@@ -84,6 +85,7 @@ namespace casioemu
 
 		Emulator &emulator;
 		CPU &cpu;
+		Coprocessor& coprocessor;
 		MMU &mmu;
 		std::vector<unsigned char> rom_data;
 
@@ -115,7 +117,7 @@ namespace casioemu
 		int ClockDiv;
 		bool LSCLKMode;
 
-		bool LSCLKTick, HSCLKTick, SYSCLKTick;
+		bool LSCLKTick, HSCLKTick;
 		bool LTBCReset, HTBCReset;
 
 		const int HTBROutputCount = 128;
@@ -132,10 +134,6 @@ namespace casioemu
 		bool UserInput_state_Port0[3], UserInput_state_Port1[7];//Marks if there is user input
 
 		bool SegmentAccess;
-
-		bool isMIBlocked;
-
-		bool EmuTimerSkipped;
 
 		/**
 		 * This exists because the Emulator that owns this Chipset is not ready
@@ -160,6 +158,8 @@ namespace casioemu
 		void ResetMaskable(size_t index);
 		void SetInterruptPendingSFR(size_t index, bool val);
 		bool GetInterruptPendingSFR(size_t index);
+		void HandleInterrupts();
+		void InstCallBack();
 		void InputToPort(int, int, bool);
 		void RemovePortInput(int, int);
 

@@ -9,6 +9,7 @@ namespace casioemu
 	MMURegion::MMURegion()
 	{
 		setup_done = false;
+		word_access = false;
 	}
 
 	MMURegion::~MMURegion()
@@ -38,6 +39,18 @@ namespace casioemu
 	{
 		emulator->chipset.mmu.UnregisterRegion(this);
 		setup_done = false;
+	}
+
+	void MMURegion::SetupWordAccess(WordReadFunction _read) {
+		if (!setup_done)
+			return;
+
+		word_read = _read;
+		word_access = true;
+	}
+
+	void MMURegion::RemoveWordAccess() {
+		word_access = false;
 	}
 }
 

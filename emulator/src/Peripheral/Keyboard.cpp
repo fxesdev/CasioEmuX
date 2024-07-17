@@ -88,7 +88,19 @@ namespace casioemu
 			emu_ko_readcount = 0;
 			int offset = emulator.hardware_id == HW_ES_PLUS ? 0 : emulator.hardware_id == HW_CLASSWIZ ? 0x40000 : 0x80000;
 			region_ready_emu.Setup(offset + 0x8E00, 1, "Keyboard/ReadyStatusEmulator", this, [](MMURegion *region, size_t offset) {
-				Keyboard *keyboard = ((Keyboard *)region->userdata);
+				Keyboard *keyboard = (Keyboard *)region->userdata;
+				if (keyboard->keyboard_ready_emu == 8) {
+					uint8_t emu_ki = keyboard->keyboard_in_emu;
+					uint8_t emu_ko = keyboard->keyboard_out_emu;
+					if (++keyboard->emu_ki_readcount > 1)
+						keyboard->keyboard_in_emu = 0;
+					if (++keyboard->emu_ko_readcount > 1)
+						keyboard->keyboard_out_emu = 0;
+					if (emu_ki == 4 && emu_ko == 16)
+						return (uint8_t)1;
+					else
+						return (uint8_t)0;
+				}
 				return keyboard->keyboard_ready_emu;
 			}, [](MMURegion *region, size_t offset, uint8_t data) {
 				Keyboard *keyboard = ((Keyboard *)region->userdata);
@@ -103,17 +115,15 @@ namespace casioemu
 			}, emulator);
 			region_ki_emu.Setup(offset + 0x8E01, 1, "Keyboard/KIEmulator", this, [](MMURegion *region, size_t offset) {
 				Keyboard *keyboard = ((Keyboard *)region->userdata);
-				keyboard->emu_ki_readcount++;
 				uint8_t value = keyboard->keyboard_in_emu;
-				if(keyboard->emu_ki_readcount > 1)
+				if(++keyboard->emu_ki_readcount > 1)
 					keyboard->keyboard_in_emu = 0;
 				return value;
 			}, MMURegion::IgnoreWrite, emulator);
 			region_ko_emu.Setup(offset + 0x8E02, 1, "Keyboard/KOEmulator", this, [](MMURegion *region, size_t offset) {
 				Keyboard *keyboard = ((Keyboard *)region->userdata);
-				keyboard->emu_ko_readcount++;
 				uint8_t value = keyboard->keyboard_out_emu;
-				if(keyboard->emu_ko_readcount > 1)
+				if(++keyboard->emu_ko_readcount > 1)
 					keyboard->keyboard_out_emu = 0;
 				return value;
 			}, MMURegion::IgnoreWrite, emulator);
@@ -315,6 +325,12 @@ namespace casioemu
 
 	void Keyboard::Tick()
 	{
+		if (!real_hardware) {
+			if (keyboard_ready_emu & 0x0C)
+				emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
+			return;
+		}
+
 		switch(emulator.chipset.data_EXICON & 0x03) {
 			case 0:
 				input_filter_last &= input_filter;
@@ -432,15 +448,15 @@ namespace casioemu
 				if (button.pressed)
 				{
 					// Report an arbitrary pressed key.
-					has_input = keyboard_in_emu = button.ki_bit;
+					keyboard_in_emu = button.ki_bit;
 					keyboard_out_emu = button.ko_bit;
 					emu_ki_readcount = emu_ko_readcount = 0;
-					emulator.chipset.EmuTimerSkipped = true;
+					emulator.chipset.MaskableInterrupts[EXI0INT].TryRaise();
 				}
 				else
 				{
 					// This key is released. There might still be other keys being held.
-					has_input = keyboard_in_emu = keyboard_out_emu = 0;
+					keyboard_in_emu = keyboard_out_emu = 0;
 				}
 			}
 		}
@@ -531,11 +547,6 @@ namespace casioemu
 			uint8_t KIRows;
 			bool seen;
 		} columns[8];
-
-		has_input = 0;
-		for (auto &button : buttons)
-			if (button.type == Button::BT_BUTTON && button.pressed && button.ki_bit & input_filter)
-				has_input |= button.ki_bit;
 
 		for (size_t cx = 0; cx != 8; ++cx)
 		{
@@ -650,8 +661,6 @@ namespace casioemu
 			require_frame = true;
 			if (real_hardware)
 				RecalculateGhost();
-			else
-				has_input = keyboard_in_emu = keyboard_out_emu = 0;
 		}
 	}
 }

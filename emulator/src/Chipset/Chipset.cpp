@@ -4,6 +4,7 @@
 #include "../Emulator.hpp"
 #include "../Logger.hpp"
 #include "CPU.hpp"
+#include "Coprocessor.hpp"
 #include "MMU.hpp"
 #include "InterruptSource.hpp"
 
@@ -32,7 +33,7 @@
 
 namespace casioemu
 {
-	Chipset::Chipset(Emulator &_emulator) : emulator(_emulator), cpu(*new CPU(emulator)), mmu(*new MMU(emulator))
+	Chipset::Chipset(Emulator &_emulator) : emulator(_emulator), cpu(*new CPU(emulator)), coprocessor(*new Coprocessor(emulator)), mmu(*new MMU(emulator))
 	{
 	}
 
@@ -75,7 +76,6 @@ namespace casioemu
 		for(size_t i = 0; i < EffectiveMICount; i++) {
 			MaskableInterrupts[i].Setup(i + INT_MASKABLE, emulator);
 		}
-		isMIBlocked = false;
 
 		//WDTINT is unused
 		region_int_mask.Setup(0xF010, 4, "Chipset/InterruptMask", this, [](MMURegion *region, size_t offset) {
@@ -195,24 +195,11 @@ namespace casioemu
 	}
 
 	void Chipset::GenerateTickForClock() {
-		if(!real_hardware) {
-			if(++SYSCLKTickCounter >= 2) {
-				SYSCLKTick = true;
-				SYSCLKTickCounter = 0;
-			}
-			HSCLKTick = LSCLKTick = SYSCLKTick;
-			return;
-		}
-		
 		//Generate HSCLK Tick
 		if(run_mode != RM_STOP) {
 			if(++HSCLKTickCounter >= ClockDiv) {
 				HSCLKTick = true;
 				HSCLKTickCounter = 0;
-				if(++SYSCLKTickCounter >= 2) {
-					SYSCLKTick = true;
-					SYSCLKTickCounter = 0;
-				}
 				if(HTBCReset) {
 					HTBCReset = false;
 				} else {
@@ -259,7 +246,6 @@ namespace casioemu
 		
 		LSCLKTick = false;
 		HSCLKTick = false;
-		SYSCLKTick = false;
 		LTBCReset = false;
 		HTBCReset = false;
 
@@ -269,7 +255,6 @@ namespace casioemu
 		LSCLKThresh = 0;
 		HSCLKTickCounter = 0;
 		HSCLKTimeCounter = 0;
-		SYSCLKTickCounter = 0;
 	}
 
 	void Chipset::DestructClockGenerator() {
@@ -358,7 +343,6 @@ namespace casioemu
 	void Chipset::Reset()
 	{
 		ResetInterruptSFR();
-		isMIBlocked = false;
 
 		ResetClockGenerator();
 
@@ -537,7 +521,7 @@ namespace casioemu
 
 		if (index >= INT_MASKABLE && index < INT_SOFTWARE)
 		{
-			if (cpu.GetMasterInterruptEnable() && acceptable && (!isMIBlocked)) {
+			if (cpu.GetMasterInterruptEnable() && acceptable) {
 				SetInterruptPendingSFR(index, false);
 				cpu.Raise(exception_level, index);
 
@@ -559,8 +543,6 @@ namespace casioemu
 			interrupts_active[index] = false;
 			pending_interrupt_count--;
 		}
-
-		run_mode = RM_RUN;
 	}
 
 	bool Chipset::GetInterruptPendingSFR(size_t index)
@@ -574,6 +556,18 @@ namespace casioemu
 			data_int_pending |= (1 << (index - managed_interrupt_base));
 		else
 			data_int_pending &= ~(1 << (index - managed_interrupt_base));
+	}
+
+	void Chipset::HandleInterrupts() {
+		if (pending_interrupt_count) {
+			AcceptInterrupt();
+			for (auto peripheral : peripherals)
+				peripheral->TickAfterInterrupts();
+		}
+	}
+
+	void Chipset::InstCallBack() {
+		coprocessor.Refresh();
 	}
 
 	bool Chipset::GetRequireFrame()
@@ -647,29 +641,23 @@ namespace casioemu
 				if(HSCLKTick)
 					peripheral->Tick();
 				break;
-			case CLOCK_SYSCLK:
-				if(SYSCLKTick)
-					peripheral->Tick();
-				break;
 			default:
 				break;
 			}
 		}
 
-		if (pending_interrupt_count) {
-			AcceptInterrupt();
-			for (auto peripheral : peripherals)
-				peripheral->TickAfterInterrupts();
-		}
+		if (pending_interrupt_count)
+			run_mode = RM_RUN;
 
-		if (run_mode == RM_RUN && SYSCLKTick) {
+		//cpu always follows the high speed clock.
+		if (run_mode == RM_RUN && HSCLKTick) {
 			cpu.Next();
+			coprocessor.Tick();
 		}
 
 		LSCLKTick = false;
 		LTBCReset = false;
 		HSCLKTick = false;
-		SYSCLKTick = false;
 	}
 
 	void Chipset::UIEvent(SDL_Event &event)
