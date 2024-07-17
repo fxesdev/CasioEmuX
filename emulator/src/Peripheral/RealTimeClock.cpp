@@ -191,8 +191,4 @@ namespace casioemu
             }
         }
     }
-
-    void RealTimeClock::Reset() {
-        RTCCON = 0;
-    }
 }

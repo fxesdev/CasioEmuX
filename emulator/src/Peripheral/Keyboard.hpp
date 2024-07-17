@@ -22,7 +22,6 @@ namespace casioemu
 
 		int emu_ki_readcount, emu_ko_readcount;
 
-		uint8_t has_input;
 		size_t EXI0INT = 0;
 
 	    SDL_Renderer *renderer;

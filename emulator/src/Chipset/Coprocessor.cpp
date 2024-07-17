@@ -340,7 +340,7 @@ namespace casioemu {
 				tick_counter = 4;
 				break;
 			case 5:
-				//MSB of coprocessor marks if 32bit/32bit division is enabled.
+				//MSB of coprocessor id marks if 32bit/32bit division is enabled.
 				if (copro_id & 0x80) {
 					Div32();
 					tick_counter = 16;

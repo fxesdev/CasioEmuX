@@ -14,15 +14,9 @@ namespace casioemu
 
 		size_t TM0INT = 4;
 
-		bool raise_required;
-		bool real_hardware;
-		bool EmuStopped;
 		uint64_t ext_to_int_counter, ext_to_int_next, ext_to_int_int_done;
 
 		size_t TimerFreqDiv;
-
-		unsigned int cycles_per_second;
-		static const uint64_t ext_to_int_frequency = 16384;
 
 	public:
 		using Peripheral::Peripheral;
@@ -30,8 +24,6 @@ namespace casioemu
 		void Initialise();
 		void Reset();
 		void Tick();
-		void TickAfterInterrupts();
-		void DivideTicks();
 		void Uninitialise();
 	};
 }

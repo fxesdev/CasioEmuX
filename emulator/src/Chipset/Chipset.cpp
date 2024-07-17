@@ -195,11 +195,6 @@ namespace casioemu
 	}
 
 	void Chipset::GenerateTickForClock() {
-		if(!real_hardware) {
-			HSCLKTick = LSCLKTick = true;
-			return;
-		}
-		
 		//Generate HSCLK Tick
 		if(run_mode != RM_STOP) {
 			if(++HSCLKTickCounter >= ClockDiv) {

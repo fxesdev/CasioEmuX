@@ -16,16 +16,10 @@ namespace casioemu
 
 		enabled = true;
 
-		real_hardware = emulator.GetModelInfo("real_hardware");
-		cycles_per_second = emulator.GetCyclesPerSecond();
-
 		TimerFreqDiv = 1;
 		clock_type = CLOCK_LSCLK;
 
 		block_bit = 3;
-
-		EmuStopped = false;
-		emulator.chipset.EmuTimerSkipped = false;
 		
 		ext_to_int_counter = 0;
 		data_interval = 0;
@@ -64,7 +58,6 @@ namespace casioemu
 		}, [](MMURegion *region, size_t, uint8_t data) {
 			Timer *timer = (Timer *)region->userdata;
 			timer->data_control = data & 0x01;
-			timer->raise_required = false;
 		}, emulator);
 	}
 
@@ -76,15 +69,6 @@ namespace casioemu
 		}
 
 		ext_to_int_counter = 0;
-		if(!real_hardware) {
-			ext_to_int_next = 0;
-			ext_to_int_int_done = 0;
-			cycles_per_second = emulator.GetCyclesPerSecond();
-			DivideTicks();
-			raise_required = false;
-			EmuStopped = false;
-			emulator.chipset.EmuTimerSkipped = false;
-		}
 
 		data_interval = 0;
 		data_counter = 0;
@@ -94,14 +78,7 @@ namespace casioemu
 
 	void Timer::Tick()
 	{
-		if(!real_hardware) {
-			if (ext_to_int_counter == ext_to_int_next)
-				DivideTicks();
-			++ext_to_int_counter;
-
-			if (raise_required)
-				emulator.chipset.MaskableInterrupts[TM0INT].TryRaise();
-		} else if(data_control) {
+		if(data_control) {
 			if(++ext_to_int_counter >= TimerFreqDiv) {
 				ext_to_int_counter = 0;
 				if(!data_interval) {
@@ -111,45 +88,6 @@ namespace casioemu
 					emulator.chipset.MaskableInterrupts[TM0INT].TryRaise();
 				}
 			}
-		}
-	}
-
-	void Timer::TickAfterInterrupts()
-	{
-		if(!real_hardware) {
-			raise_required = false;
-
-			if(EmuStopped && emulator.chipset.GetRunningState()) {
-				EmuStopped = false;
-				emulator.chipset.EmuTimerSkipped = false;
-			}
-		}
-	}
-
-	void Timer::DivideTicks()
-	{
-		if(emulator.hardware_id == HW_CLASSWIZ_II && !real_hardware) {
-			if(!emulator.chipset.GetRunningState()) {
-				EmuStopped = true;
-			}
-		}
-		++ext_to_int_int_done;
-		if (ext_to_int_int_done == ext_to_int_frequency)
-		{
-			ext_to_int_int_done = 0;
-			ext_to_int_counter = 0;
-			cycles_per_second = emulator.GetCyclesPerSecond();
-		}
-		ext_to_int_next = cycles_per_second * (ext_to_int_int_done + 1) / ext_to_int_frequency;
-
-		if (data_control & 0x01)
-		{
-			if (data_counter >= (emulator.chipset.EmuTimerSkipped ? 1 : data_interval))
-			{
-				data_counter = 0;
-				raise_required = true;
-			}
-			++data_counter;
 		}
 	}
 

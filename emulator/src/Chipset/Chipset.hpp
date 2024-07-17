@@ -135,8 +135,6 @@ namespace casioemu
 
 		bool SegmentAccess;
 
-		bool EmuTimerSkipped;
-
 		/**
 		 * This exists because the Emulator that owns this Chipset is not ready
 		 * to supply a ROM path upon construction. It has to call `LoadROM` later

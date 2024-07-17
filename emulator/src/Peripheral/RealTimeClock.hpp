@@ -48,7 +48,6 @@ namespace casioemu
         bool AL1Check();
 
 		void Initialise();
-		void Reset();
 		void Tick();
 	};
 }
